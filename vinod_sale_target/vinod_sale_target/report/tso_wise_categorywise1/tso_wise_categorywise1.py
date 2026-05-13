@@ -3,10 +3,6 @@
 
 # import frappe
 
-
-# Copyright (c) 2026, Sukku and contributors
-# For license information, please see license.txt
-
 import frappe
 from frappe.utils import flt, getdate
 from frappe import _
