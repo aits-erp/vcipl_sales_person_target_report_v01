@@ -5,56 +5,76 @@
 # MONTHS = ["Jan","Feb","Mar","Apr","May","Jun",
 #           "Jul","Aug","Sep","Oct","Nov","Dec"]
 
+# # Map month number to child table fieldname
+# MONTH_FIELD_MAP = {
+#     1:  "jan_target",
+#     2:  "feb_target",
+#     3:  "mar_target",
+#     4:  "apr_target",
+#     5:  "may_target",
+#     6:  "jun_target",
+#     7:  "jul_target",
+#     8:  "aug_target",
+#     9:  "sep_target",
+#     10: "oct_target",
+#     11: "nov_target",
+#     12: "dec_target"
+# }
+
 # def execute(filters=None):
 #     filters = frappe._dict(filters or {})
-    
-#     # Validate dates
+
 #     if filters.get("from_date") and filters.get("to_date"):
 #         if getdate(filters.from_date) > getdate(filters.to_date):
 #             frappe.throw(_("From Date must be before To Date"))
-    
+
 #     categories = get_categories(filters)
-#     columns = get_columns(categories, filters)
-#     data = get_data(filters, categories)
-    
-#     chart = get_chart_data(data, categories)
-#     summary = get_summary(data, categories)
-    
+#     columns    = get_columns(categories, filters)
+#     data       = get_data(filters, categories)
+#     chart      = get_chart_data(data, categories)
+#     summary    = get_summary(data, categories)
+
 #     return columns, data, None, chart, summary
 
 
+# # ─────────────────────────────────────────────
+# # CATEGORIES
+# # ─────────────────────────────────────────────
 # def get_categories(filters):
 #     if filters.get("custom_main_group"):
 #         if isinstance(filters.custom_main_group, list):
 #             return filters.custom_main_group
 #         return [filters.custom_main_group]
-    
+
 #     conditions = ""
 #     values = {}
-    
+
 #     if filters.get("from_date"):
 #         conditions += " AND si.posting_date >= %(from_date)s"
 #         values["from_date"] = filters.get("from_date")
-    
+
 #     if filters.get("to_date"):
 #         conditions += " AND si.posting_date <= %(to_date)s"
 #         values["to_date"] = filters.get("to_date")
-    
+
 #     categories = frappe.db.sql("""
 #         SELECT DISTINCT i.custom_main_group
 #         FROM `tabSales Invoice` si
 #         INNER JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
 #         INNER JOIN `tabItem` i ON i.name = sii.item_code
 #         WHERE si.docstatus = 1
-#         AND i.custom_main_group IS NOT NULL
-#         AND i.custom_main_group != ''
-#         {conditions}
+#           AND i.custom_main_group IS NOT NULL
+#           AND i.custom_main_group != ''
+#           {conditions}
 #         ORDER BY i.custom_main_group
 #     """.format(conditions=conditions), values)
-    
+
 #     return [c[0] for c in categories if c[0]]
 
 
+# # ─────────────────────────────────────────────
+# # COLUMNS
+# # ─────────────────────────────────────────────
 # def get_columns(categories, filters=None):
 #     columns = []
 
@@ -83,146 +103,87 @@
 
 
 # # ─────────────────────────────────────────────
-# # TARGET CACHE — fetch once per (tso, month, year)
+# # TARGET CACHE
 # # ─────────────────────────────────────────────
 # _target_cache = {}
 
 # def _load_targets_for_tso(tso_name, month_num, year):
 #     """
 #     Load all main_group targets for a given TSO + month + year.
-#     Tries multiple possible column name combinations to handle
-#     different DocType field naming conventions.
-#     Returns a dict { main_group: target_amount }
+#     Monthly Target Detail has columns: main_group, jan_target ... dec_target
+#     Parent Sales Person Target has: sales_person, year (or fiscal_year)
+#     Returns dict { main_group: target_amount }
 #     """
 #     cache_key = (tso_name, month_num, year)
 #     if cache_key in _target_cache:
 #         return _target_cache[cache_key]
 
-#     result = {}
+#     month_field = MONTH_FIELD_MAP.get(int(month_num), "jan_target")
 
-#     # -------------------------------------------------------------------
-#     # Strategy 1: year is on the PARENT table (tabSales Person Target)
-#     # Most common pattern — try this first
-#     # -------------------------------------------------------------------
+#     # ── Try 1: spt.year + spt.sales_person ──────────────────────────────
 #     try:
-#         rows = frappe.db.sql("""
+#         rows = frappe.db.sql(f"""
 #             SELECT
 #                 mtd.main_group,
-#                 mtd.target_amount
+#                 mtd.{month_field} AS target_amount
 #             FROM `tabMonthly Target Detail` mtd
 #             INNER JOIN `tabSales Person Target` spt
 #                 ON spt.name = mtd.parent
 #             WHERE spt.sales_person = %(tso_name)s
-#               AND mtd.month        = %(month_num)s
 #               AND spt.year         = %(year)s
 #               AND spt.docstatus    = 1
-#         """, {
-#             "tso_name":  tso_name,
-#             "month_num": month_num,
-#             "year":      year
-#         }, as_dict=1)
+#         """, {"tso_name": tso_name, "year": year}, as_dict=1)
 
-#         result = {r.main_group: flt(r.target_amount) for r in rows}
+#         result = {r.main_group: flt(r.target_amount) for r in rows if r.main_group}
 #         _target_cache[cache_key] = result
 #         return result
-
-#     except Exception:
-#         pass  # Column name mismatch — try next strategy
-
-#     # -------------------------------------------------------------------
-#     # Strategy 2: parent uses 'customer' instead of 'sales_person'
-#     # -------------------------------------------------------------------
-#     try:
-#         rows = frappe.db.sql("""
-#             SELECT
-#                 mtd.main_group,
-#                 mtd.target_amount
-#             FROM `tabMonthly Target Detail` mtd
-#             INNER JOIN `tabSales Person Target` spt
-#                 ON spt.name = mtd.parent
-#             WHERE spt.customer   = %(tso_name)s
-#               AND mtd.month      = %(month_num)s
-#               AND spt.year       = %(year)s
-#               AND spt.docstatus  = 1
-#         """, {
-#             "tso_name":  tso_name,
-#             "month_num": month_num,
-#             "year":      year
-#         }, as_dict=1)
-
-#         result = {r.main_group: flt(r.target_amount) for r in rows}
-#         _target_cache[cache_key] = result
-#         return result
-
 #     except Exception:
 #         pass
 
-#     # -------------------------------------------------------------------
-#     # Strategy 3: year is on the CHILD table (tabMonthly Target Detail)
-#     # with fieldname 'target_year'
-#     # -------------------------------------------------------------------
+#     # ── Try 2: spt.fiscal_year (varchar) + spt.sales_person ─────────────
 #     try:
-#         rows = frappe.db.sql("""
+#         rows = frappe.db.sql(f"""
 #             SELECT
 #                 mtd.main_group,
-#                 mtd.target_amount
+#                 mtd.{month_field} AS target_amount
 #             FROM `tabMonthly Target Detail` mtd
 #             INNER JOIN `tabSales Person Target` spt
 #                 ON spt.name = mtd.parent
-#             WHERE spt.sales_person  = %(tso_name)s
-#               AND mtd.month         = %(month_num)s
-#               AND mtd.target_year   = %(year)s
-#               AND spt.docstatus     = 1
-#         """, {
-#             "tso_name":  tso_name,
-#             "month_num": month_num,
-#             "year":      year
-#         }, as_dict=1)
+#             WHERE spt.sales_person = %(tso_name)s
+#               AND spt.fiscal_year  = %(year)s
+#               AND spt.docstatus    = 1
+#         """, {"tso_name": tso_name, "year": str(year)}, as_dict=1)
 
-#         result = {r.main_group: flt(r.target_amount) for r in rows}
+#         result = {r.main_group: flt(r.target_amount) for r in rows if r.main_group}
 #         _target_cache[cache_key] = result
 #         return result
-
 #     except Exception:
 #         pass
 
-#     # -------------------------------------------------------------------
-#     # Strategy 4: fiscal_year as a string e.g. '2026' on parent
-#     # -------------------------------------------------------------------
+#     # ── Try 3: no year filter on parent (single active doc per TSO) ──────
 #     try:
-#         rows = frappe.db.sql("""
+#         rows = frappe.db.sql(f"""
 #             SELECT
 #                 mtd.main_group,
-#                 mtd.target_amount
+#                 mtd.{month_field} AS target_amount
 #             FROM `tabMonthly Target Detail` mtd
 #             INNER JOIN `tabSales Person Target` spt
 #                 ON spt.name = mtd.parent
-#             WHERE spt.sales_person  = %(tso_name)s
-#               AND mtd.month         = %(month_num)s
-#               AND spt.fiscal_year   = %(year)s
-#               AND spt.docstatus     = 1
-#         """, {
-#             "tso_name":  tso_name,
-#             "month_num": month_num,
-#             "year":      str(year)      # fiscal_year is often stored as varchar
-#         }, as_dict=1)
+#             WHERE spt.sales_person = %(tso_name)s
+#               AND spt.docstatus    = 1
+#         """, {"tso_name": tso_name}, as_dict=1)
 
-#         result = {r.main_group: flt(r.target_amount) for r in rows}
+#         result = {r.main_group: flt(r.target_amount) for r in rows if r.main_group}
 #         _target_cache[cache_key] = result
 #         return result
-
 #     except Exception:
 #         pass
 
-#     # -------------------------------------------------------------------
-#     # Fallback: no target found — return empty dict so report still runs
-#     # -------------------------------------------------------------------
 #     _target_cache[cache_key] = {}
 #     return {}
 
 
 # def get_month_target_from_sales_team(sales_person, month_num, year, category):
-#     """Return the target amount for one TSO + month + year + category."""
 #     targets = _load_targets_for_tso(sales_person, month_num, year)
 #     return flt(targets.get(category, 0))
 
@@ -231,33 +192,32 @@
 # # DATA
 # # ─────────────────────────────────────────────
 # def get_data(filters, categories):
-#     # Reset cache for each report run
 #     global _target_cache
 #     _target_cache = {}
 
 #     conditions = []
 #     values = {}
-    
+
 #     if filters.get("from_date"):
 #         conditions.append("si.posting_date >= %(from_date)s")
 #         values["from_date"] = filters.get("from_date")
-    
+
 #     if filters.get("to_date"):
 #         conditions.append("si.posting_date <= %(to_date)s")
 #         values["to_date"] = filters.get("to_date")
-    
+
 #     if filters.get("parent_sales_person"):
 #         conditions.append("sp.parent_sales_person = %(parent_sales_person)s")
 #         values["parent_sales_person"] = filters.get("parent_sales_person")
-    
+
 #     if filters.get("sales_person"):
 #         conditions.append("sp.name = %(sales_person)s")
 #         values["sales_person"] = filters.get("sales_person")
-    
+
 #     if filters.get("customer"):
 #         conditions.append("si.customer = %(customer)s")
 #         values["customer"] = filters.get("customer")
-    
+
 #     if filters.get("customer_group"):
 #         conditions.append("si.customer_group = %(customer_group)s")
 #         values["customer_group"] = filters.get("customer_group")
@@ -332,7 +292,6 @@
 #     """
 
 #     data = frappe.db.sql(query, values, as_dict=1)
-
 #     result = {}
 
 #     for row in data:
@@ -431,7 +390,6 @@ from frappe import _
 MONTHS = ["Jan","Feb","Mar","Apr","May","Jun",
           "Jul","Aug","Sep","Oct","Nov","Dec"]
 
-# Map month number to child table fieldname
 MONTH_FIELD_MAP = {
     1:  "jan_target",
     2:  "feb_target",
@@ -533,20 +491,21 @@ def get_columns(categories, filters=None):
 # ─────────────────────────────────────────────
 _target_cache = {}
 
-def _load_targets_for_tso(tso_name, month_num, year):
+def _load_targets_for_tso(tso_name, month_num):
     """
-    Load all main_group targets for a given TSO + month + year.
-    Monthly Target Detail has columns: main_group, jan_target ... dec_target
-    Parent Sales Person Target has: sales_person, year (or fiscal_year)
-    Returns dict { main_group: target_amount }
+    Parent: Sales Person Target  →  linked by spt.customer = tso_name
+                                     period_type = 'Monthly'
+    Child:  Monthly Target Detail → mtd.sales_person = tso_name
+                                     mtd.main_group
+                                     mtd.jan_target ... mtd.dec_target
+    Returns dict { main_group: target_amount_for_that_month }
     """
-    cache_key = (tso_name, month_num, year)
+    cache_key = (tso_name, month_num)
     if cache_key in _target_cache:
         return _target_cache[cache_key]
 
     month_field = MONTH_FIELD_MAP.get(int(month_num), "jan_target")
 
-    # ── Try 1: spt.year + spt.sales_person ──────────────────────────────
     try:
         rows = frappe.db.sql(f"""
             SELECT
@@ -555,62 +514,46 @@ def _load_targets_for_tso(tso_name, month_num, year):
             FROM `tabMonthly Target Detail` mtd
             INNER JOIN `tabSales Person Target` spt
                 ON spt.name = mtd.parent
-            WHERE spt.sales_person = %(tso_name)s
-              AND spt.year         = %(year)s
+            WHERE spt.customer     = %(tso_name)s
+              AND spt.period_type  = 'Monthly'
               AND spt.docstatus    = 1
-        """, {"tso_name": tso_name, "year": year}, as_dict=1)
-
-        result = {r.main_group: flt(r.target_amount) for r in rows if r.main_group}
-        _target_cache[cache_key] = result
-        return result
-    except Exception:
-        pass
-
-    # ── Try 2: spt.fiscal_year (varchar) + spt.sales_person ─────────────
-    try:
-        rows = frappe.db.sql(f"""
-            SELECT
-                mtd.main_group,
-                mtd.{month_field} AS target_amount
-            FROM `tabMonthly Target Detail` mtd
-            INNER JOIN `tabSales Person Target` spt
-                ON spt.name = mtd.parent
-            WHERE spt.sales_person = %(tso_name)s
-              AND spt.fiscal_year  = %(year)s
-              AND spt.docstatus    = 1
-        """, {"tso_name": tso_name, "year": str(year)}, as_dict=1)
-
-        result = {r.main_group: flt(r.target_amount) for r in rows if r.main_group}
-        _target_cache[cache_key] = result
-        return result
-    except Exception:
-        pass
-
-    # ── Try 3: no year filter on parent (single active doc per TSO) ──────
-    try:
-        rows = frappe.db.sql(f"""
-            SELECT
-                mtd.main_group,
-                mtd.{month_field} AS target_amount
-            FROM `tabMonthly Target Detail` mtd
-            INNER JOIN `tabSales Person Target` spt
-                ON spt.name = mtd.parent
-            WHERE spt.sales_person = %(tso_name)s
-              AND spt.docstatus    = 1
+              AND mtd.sales_person = %(tso_name)s
         """, {"tso_name": tso_name}, as_dict=1)
 
         result = {r.main_group: flt(r.target_amount) for r in rows if r.main_group}
         _target_cache[cache_key] = result
         return result
-    except Exception:
-        pass
+
+    except Exception as e:
+        frappe.log_error(f"Target fetch error for {tso_name}: {e}", "TSO Report")
+
+    # Fallback: match only by parent customer, no sales_person filter on child
+    try:
+        rows = frappe.db.sql(f"""
+            SELECT
+                mtd.main_group,
+                mtd.{month_field} AS target_amount
+            FROM `tabMonthly Target Detail` mtd
+            INNER JOIN `tabSales Person Target` spt
+                ON spt.name = mtd.parent
+            WHERE spt.customer    = %(tso_name)s
+              AND spt.period_type = 'Monthly'
+              AND spt.docstatus   = 1
+        """, {"tso_name": tso_name}, as_dict=1)
+
+        result = {r.main_group: flt(r.target_amount) for r in rows if r.main_group}
+        _target_cache[cache_key] = result
+        return result
+
+    except Exception as e:
+        frappe.log_error(f"Target fallback error for {tso_name}: {e}", "TSO Report")
 
     _target_cache[cache_key] = {}
     return {}
 
 
-def get_month_target_from_sales_team(sales_person, month_num, year, category):
-    targets = _load_targets_for_tso(sales_person, month_num, year)
+def get_month_target_from_sales_team(tso_name, month_num, category):
+    targets = _load_targets_for_tso(tso_name, month_num)
     return flt(targets.get(category, 0))
 
 
@@ -750,8 +693,9 @@ def get_data(filters, categories):
             for cat in categories:
                 safe = cat.replace(" ", "_").replace("-", "_")
                 entry[f"{safe}_achieved"] = 0
+                # Use tso_name as customer lookup — matches spt.customer
                 target_value = get_month_target_from_sales_team(
-                    row.tso_name, row.month_num, row.year, cat
+                    row.tso_name, row.month_num, cat
                 )
                 entry[f"{safe}_target"]  = flt(target_value)
                 entry["total_target"]   += flt(target_value)
