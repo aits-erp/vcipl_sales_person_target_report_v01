@@ -196,7 +196,8 @@ frappe.query_reports["TSO WISE CATEGORYWISE1"] = {
             fieldname: "customer_group",
             label: "Customer Group",
             fieldtype: "Link",
-            options: "Customer Group"
+            options: "Customer Group",
+            default: "Debtors Distributors"
         },
         {
             fieldname: "custom_main_group",
@@ -219,27 +220,5 @@ frappe.query_reports["TSO WISE CATEGORYWISE1"] = {
             fieldtype: "Check",
             default: 0
         }
-    ],
-
-    formatter: function(value, row, column, data, default_formatter) {
-        value = default_formatter(value, row, column, data);
-
-        if (column.fieldname && column.fieldname.includes("_achieved")) {
-            const num = parseFloat(String(value).replace(/,/g, ""));
-            if (num > 0) {
-                value = `<span style="color:#28a745;font-weight:600;">${value}</span>`;
-            } else {
-                value = `<span style="color:#dc3545;">${value}</span>`;
-            }
-        }
-
-        if (column.fieldname && column.fieldname.includes("_target")) {
-            const num = parseFloat(String(value).replace(/,/g, ""));
-            if (num > 0) {
-                value = `<span style="color:#007bff;font-weight:600;">${value}</span>`;
-            }
-        }
-
-        return value;
-    }
+    ]
 };
