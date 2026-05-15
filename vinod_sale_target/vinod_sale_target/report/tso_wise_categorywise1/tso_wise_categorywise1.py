@@ -493,12 +493,10 @@ _target_cache = {}
 
 def _load_targets_for_tso(tso_name, month_num):
     """
-    Parent: Sales Person Target  →  linked by spt.customer = tso_name
-                                     period_type = 'Monthly'
-    Child:  Monthly Target Detail → mtd.sales_person = tso_name
-                                     mtd.main_group
-                                     mtd.jan_target ... mtd.dec_target
-    Returns dict { main_group: target_amount_for_that_month }
+    KEY FINDING from image:
+    - spt.customer = Customer ID (C0115)  — NOT the sales person name
+    - mtd.sales_person = 'Rajendra Sharma' — matches sp.name from invoice
+    So join on mtd.sales_person = tso_name (which is sp.name)
     """
     cache_key = (tso_name, month_num)
     if cache_key in _target_cache:
@@ -514,10 +512,9 @@ def _load_targets_for_tso(tso_name, month_num):
             FROM `tabMonthly Target Detail` mtd
             INNER JOIN `tabSales Person Target` spt
                 ON spt.name = mtd.parent
-            WHERE spt.customer     = %(tso_name)s
+            WHERE mtd.sales_person = %(tso_name)s
               AND spt.period_type  = 'Monthly'
               AND spt.docstatus    = 1
-              AND mtd.sales_person = %(tso_name)s
         """, {"tso_name": tso_name}, as_dict=1)
 
         result = {r.main_group: flt(r.target_amount) for r in rows if r.main_group}
@@ -526,27 +523,6 @@ def _load_targets_for_tso(tso_name, month_num):
 
     except Exception as e:
         frappe.log_error(f"Target fetch error for {tso_name}: {e}", "TSO Report")
-
-    # Fallback: match only by parent customer, no sales_person filter on child
-    try:
-        rows = frappe.db.sql(f"""
-            SELECT
-                mtd.main_group,
-                mtd.{month_field} AS target_amount
-            FROM `tabMonthly Target Detail` mtd
-            INNER JOIN `tabSales Person Target` spt
-                ON spt.name = mtd.parent
-            WHERE spt.customer    = %(tso_name)s
-              AND spt.period_type = 'Monthly'
-              AND spt.docstatus   = 1
-        """, {"tso_name": tso_name}, as_dict=1)
-
-        result = {r.main_group: flt(r.target_amount) for r in rows if r.main_group}
-        _target_cache[cache_key] = result
-        return result
-
-    except Exception as e:
-        frappe.log_error(f"Target fallback error for {tso_name}: {e}", "TSO Report")
 
     _target_cache[cache_key] = {}
     return {}
@@ -693,7 +669,6 @@ def get_data(filters, categories):
             for cat in categories:
                 safe = cat.replace(" ", "_").replace("-", "_")
                 entry[f"{safe}_achieved"] = 0
-                # Use tso_name as customer lookup — matches spt.customer
                 target_value = get_month_target_from_sales_team(
                     row.tso_name, row.month_num, cat
                 )
