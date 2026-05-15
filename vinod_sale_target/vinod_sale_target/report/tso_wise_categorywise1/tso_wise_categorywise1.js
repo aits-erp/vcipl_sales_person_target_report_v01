@@ -1,6 +1,7 @@
 frappe.query_reports["TSO WISE CATEGORYWISE1"] = {
 
     onload: async function(report) {
+        // Use frappe.db.get_list instead of sql_list to avoid permission error
         const result = await frappe.db.get_list("Item", {
             fields: ["custom_main_group"],
             filters: [["custom_main_group", "!=", ""]],
@@ -46,30 +47,36 @@ frappe.query_reports["TSO WISE CATEGORYWISE1"] = {
             fieldname: "custom_region",
             label: "Region",
             fieldtype: "MultiSelectList",
-            get_data: function(txt) {
-                return frappe.db.sql_list(`
-                    SELECT DISTINCT custom_region
-                    FROM \`tabSales Person\`
-                    WHERE custom_region IS NOT NULL
-                    AND custom_region != ''
-                    AND custom_region LIKE %s
-                    ORDER BY custom_region
-                `, ["%" + txt + "%"]);
+            get_data: async function(txt) {
+                const rows = await frappe.db.get_list("Sales Person", {
+                    fields: ["custom_region"],
+                    filters: [
+                        ["custom_region", "!=", ""],
+                        ["custom_region", "like", "%" + txt + "%"]
+                    ],
+                    group_by: "custom_region",
+                    limit: 50
+                });
+                return [...new Set(rows.map(r => r.custom_region).filter(Boolean))].sort()
+                    .map(v => ({ label: v, value: v }));
             }
         },
         {
             fieldname: "custom_head_sales_code",
             label: "Head Sales Code",
             fieldtype: "MultiSelectList",
-            get_data: function(txt) {
-                return frappe.db.sql_list(`
-                    SELECT DISTINCT custom_head_sales_code
-                    FROM \`tabSales Person\`
-                    WHERE custom_head_sales_code IS NOT NULL
-                    AND custom_head_sales_code != ''
-                    AND custom_head_sales_code LIKE %s
-                    ORDER BY custom_head_sales_code
-                `, ["%" + txt + "%"]);
+            get_data: async function(txt) {
+                const rows = await frappe.db.get_list("Sales Person", {
+                    fields: ["custom_head_sales_code"],
+                    filters: [
+                        ["custom_head_sales_code", "!=", ""],
+                        ["custom_head_sales_code", "like", "%" + txt + "%"]
+                    ],
+                    group_by: "custom_head_sales_code",
+                    limit: 50
+                });
+                return [...new Set(rows.map(r => r.custom_head_sales_code).filter(Boolean))].sort()
+                    .map(v => ({ label: v, value: v }));
             }
         },
         {
@@ -89,15 +96,18 @@ frappe.query_reports["TSO WISE CATEGORYWISE1"] = {
             fieldname: "custom_main_group",
             label: "Category",
             fieldtype: "MultiSelectList",
-            get_data: function(txt) {
-                return frappe.db.sql_list(`
-                    SELECT DISTINCT custom_main_group
-                    FROM \`tabItem\`
-                    WHERE custom_main_group IS NOT NULL
-                    AND custom_main_group != ''
-                    AND custom_main_group LIKE %s
-                    ORDER BY custom_main_group
-                `, ["%" + txt + "%"]);
+            get_data: async function(txt) {
+                const rows = await frappe.db.get_list("Item", {
+                    fields: ["custom_main_group"],
+                    filters: [
+                        ["custom_main_group", "!=", ""],
+                        ["custom_main_group", "like", "%" + txt + "%"]
+                    ],
+                    group_by: "custom_main_group",
+                    limit: 100
+                });
+                return [...new Set(rows.map(r => r.custom_main_group).filter(Boolean))].sort()
+                    .map(v => ({ label: v, value: v }));
             }
         },
         {
