@@ -30,10 +30,9 @@ def execute(filters=None):
     categories = get_categories(filters)
     columns    = get_columns(categories, filters)
     data       = get_data(filters, categories)
-    chart      = get_chart_data(data, categories)
     summary    = get_summary(data, categories)
 
-    return columns, data, None, chart, summary
+    return columns, data, None, None, summary
 
 
 def get_categories(filters):
@@ -101,11 +100,6 @@ def get_columns(categories, filters=None):
 _target_cache = {}
 
 def _load_targets_for_tso(tso_name, month_num):
-    """
-    mtd.sales_person = sp.name from invoice (e.g. 'Rajendra Sharma')
-    mtd.main_group   = category (e.g. 'Nonstick')
-    mtd.may_target   = target for that month
-    """
     cache_key = (tso_name, month_num)
     if cache_key in _target_cache:
         return _target_cache[cache_key]
@@ -122,7 +116,7 @@ def _load_targets_for_tso(tso_name, month_num):
                 ON spt.name = mtd.parent
             WHERE mtd.sales_person = %(tso_name)s
               AND spt.period_type  = 'Monthly'
-              AND spt.docstatus    = 1
+              AND spt.docstatus    = 0
         """, {"tso_name": tso_name}, as_dict=1)
 
         result = {r.main_group: flt(r.target_amount) for r in rows if r.main_group}
@@ -289,25 +283,6 @@ def get_data(filters, categories):
         result[key]["item_count"]       += int(row.item_count)
 
     return list(result.values())
-
-
-def get_chart_data(data, categories):
-    if not data:
-        return None
-
-    month_totals = {}
-    for row in data:
-        m = row.get("month")
-        month_totals[m] = month_totals.get(m, 0) + flt(row.get("total_achieved"))
-
-    return {
-        "data": {
-            "labels": list(month_totals.keys()),
-            "datasets": [{"name": "Achieved", "values": list(month_totals.values())}]
-        },
-        "type": "bar",
-        "height": 300
-    }
 
 
 def get_summary(data, categories):

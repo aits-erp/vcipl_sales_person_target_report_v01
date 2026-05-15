@@ -1,7 +1,6 @@
 frappe.query_reports["TSO WISE CATEGORYWISE1"] = {
 
     onload: async function(report) {
-        // Use frappe.db.get_list instead of sql_list to avoid permission error
         const result = await frappe.db.get_list("Item", {
             fields: ["custom_main_group"],
             filters: [["custom_main_group", "!=", ""]],
