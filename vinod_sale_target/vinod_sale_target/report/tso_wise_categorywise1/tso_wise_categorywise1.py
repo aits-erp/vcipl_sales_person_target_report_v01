@@ -529,7 +529,7 @@ def get_data(filters, categories):
         FROM `tabSales Invoice` si
         INNER JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
         INNER JOIN `tabItem` i                 ON i.name = sii.item_code
-        LEFT JOIN `tabSales Team` st          ON st.parent = si.name AND st.idx = 1
+        LEFT JOIN `tabSales Team` st          ON st.parent = si.name 
         LEFT JOIN `tabSales Person` sp        ON sp.name = st.sales_person
         INNER JOIN `tabCustomer` c             ON c.name = si.customer
         WHERE si.docstatus = 1
