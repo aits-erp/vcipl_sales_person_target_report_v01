@@ -59,7 +59,7 @@ frappe.query_reports["TSO WISE CATEGORYWISE1"] = {
                 return [...new Set(rows.map(r => r.custom_region).filter(Boolean))].sort()
                     .map(v => ({ label: v, value: v }));
             }
-        },
+        },    
         {
             fieldname: "custom_head_sales_code",
             label: "Head Sales Code",
@@ -117,3 +117,4 @@ frappe.query_reports["TSO WISE CATEGORYWISE1"] = {
         }
     ]
 };
+
