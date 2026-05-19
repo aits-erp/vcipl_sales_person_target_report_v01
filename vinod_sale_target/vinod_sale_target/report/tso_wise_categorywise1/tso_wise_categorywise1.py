@@ -456,11 +456,16 @@ def get_data(filters, categories):
         values["to_date"] = filters.get("to_date")
 
     if filters.get("sales_person"):
-        conditions.append("sp.name = %(sales_person)s")
+        conditions.append("""
+            COALESCE(sp_inv.name, sp_cust.name) = %(sales_person)s
+        """)
         values["sales_person"] = filters.get("sales_person")
 
     if filters.get("parent_sales_person"):
-        conditions.append("sp.parent_sales_person = %(parent_sales_person)s")
+        conditions.append("""
+            COALESCE(sp_inv.parent_sales_person,
+                     sp_cust.parent_sales_person) = %(parent_sales_person)s
+        """)
         values["parent_sales_person"] = filters.get("parent_sales_person")
 
     if filters.get("customer"):
@@ -476,7 +481,10 @@ def get_data(filters, categories):
         if isinstance(regions, str):
             regions = [x.strip() for x in regions.split(",") if x.strip()]
         if regions:
-            conditions.append("sp.custom_region IN %(custom_region)s")
+            conditions.append("""
+                COALESCE(sp_inv.custom_region,
+                         sp_cust.custom_region) IN %(custom_region)s
+            """)
             values["custom_region"] = tuple(regions)
 
     if filters.get("custom_head_sales_code"):
@@ -484,7 +492,10 @@ def get_data(filters, categories):
         if isinstance(codes, str):
             codes = [x.strip() for x in codes.split(",") if x.strip()]
         if codes:
-            conditions.append("sp.custom_head_sales_code IN %(custom_head_sales_code)s")
+            conditions.append("""
+                COALESCE(sp_inv.custom_head_sales_code,
+                         sp_cust.custom_head_sales_code) IN %(custom_head_sales_code)s
+            """)
             values["custom_head_sales_code"] = tuple(codes)
 
     if filters.get("custom_main_group"):
@@ -501,9 +512,9 @@ def get_data(filters, categories):
         DATE_FORMAT(si.posting_date, '%%Y-%%m'),
         MONTH(si.posting_date),
         YEAR(si.posting_date),
-        sp.name,
-        sp.parent_sales_person,
-        sp.custom_region,
+        COALESCE(sp_inv.name, sp_cust.name, 'Unassigned'),
+        COALESCE(sp_inv.parent_sales_person, sp_cust.parent_sales_person, ''),
+        COALESCE(sp_inv.custom_region, sp_cust.custom_region, ''),
         c.customer_name,
         i.custom_main_group
     """
@@ -511,56 +522,44 @@ def get_data(filters, categories):
     if filters.get("show_item_details"):
         group_by += ", sii.item_code, i.item_name"
 
-    # ── KEY FIX: removed AND st.idx = 1
-    # Now uses LEFT JOIN from Customer's Sales Team
-    # to get sales person even when idx != 1
     query = f"""
         SELECT
-            DATE_FORMAT(si.posting_date, '%%Y-%%m') AS month_key,
-            MONTH(si.posting_date)                  AS month_num,
-            YEAR(si.posting_date)                   AS year,
-            COALESCE(
-                sp_inv.name,
-                sp_cust.name,
-                'Unassigned'
-            )                                       AS tso_name,
-            COALESCE(
-                sp_inv.parent_sales_person,
-                sp_cust.parent_sales_person,
-                ''
-            )                                       AS parent_sales_person,
-            COALESCE(
-                sp_inv.custom_region,
-                sp_cust.custom_region,
-                ''
-            )                                       AS custom_region,
+            DATE_FORMAT(si.posting_date, '%%Y-%%m')                        AS month_key,
+            MONTH(si.posting_date)                                          AS month_num,
+            YEAR(si.posting_date)                                           AS year,
+            COALESCE(sp_inv.name, sp_cust.name, 'Unassigned')              AS tso_name,
+            COALESCE(sp_inv.parent_sales_person,
+                     sp_cust.parent_sales_person, '')                       AS parent_sales_person,
+            COALESCE(sp_inv.custom_region, sp_cust.custom_region, '')      AS custom_region,
             c.customer_name,
-            i.custom_main_group                     AS category,
+            i.custom_main_group                                             AS category,
             sii.item_code,
             i.item_name,
-            SUM(sii.base_net_amount)                AS achieved,
-            COUNT(DISTINCT si.name)                 AS invoice_count,
-            COUNT(DISTINCT sii.item_code)           AS item_count
+            SUM(sii.base_net_amount)                                        AS achieved,
+            COUNT(DISTINCT si.name)                                         AS invoice_count,
+            COUNT(DISTINCT sii.item_code)                                   AS item_count
         FROM `tabSales Invoice` si
-        INNER JOIN `tabSales Invoice Item` sii  ON sii.parent = si.name
-        INNER JOIN `tabItem` i                  ON i.name = sii.item_code
-        INNER JOIN `tabCustomer` c              ON c.name = si.customer
+        INNER JOIN `tabSales Invoice Item` sii   ON sii.parent = si.name
+        INNER JOIN `tabItem` i                   ON i.name = sii.item_code
+        INNER JOIN `tabCustomer` c               ON c.name = si.customer
 
-        -- Sales Person from Invoice Sales Team (any idx)
-        LEFT JOIN `tabSales Team` st_inv        ON st_inv.parent = si.name
-        LEFT JOIN `tabSales Person` sp_inv      ON sp_inv.name = st_inv.sales_person
+        -- Sales Person from Invoice Sales Team (priority)
+        LEFT JOIN `tabSales Team` st_inv         ON st_inv.parent = si.name
+                                                 AND st_inv.parenttype = 'Sales Invoice'
+        LEFT JOIN `tabSales Person` sp_inv       ON sp_inv.name = st_inv.sales_person
 
-        -- Sales Person from Customer master Sales Team (fallback)
-        LEFT JOIN `tabSales Team` st_cust       ON st_cust.parent = si.customer
-                                                AND st_cust.parenttype = 'Customer'
-        LEFT JOIN `tabSales Person` sp_cust     ON sp_cust.name = st_cust.sales_person
+        -- Sales Person from Customer master (fallback when invoice has none)
+        LEFT JOIN `tabSales Team` st_cust        ON st_cust.parent = si.customer
+                                                 AND st_cust.parenttype = 'Customer'
+        LEFT JOIN `tabSales Person` sp_cust      ON sp_cust.name = st_cust.sales_person
 
         WHERE si.docstatus = 1
           AND i.custom_main_group IS NOT NULL
           AND i.custom_main_group != ''
           AND {where_clause}
         GROUP BY {group_by}
-        ORDER BY YEAR(si.posting_date), MONTH(si.posting_date), tso_name
+        ORDER BY YEAR(si.posting_date), MONTH(si.posting_date),
+                 COALESCE(sp_inv.name, sp_cust.name, 'Unassigned')
     """
 
     data = frappe.db.sql(query, values, as_dict=1)
