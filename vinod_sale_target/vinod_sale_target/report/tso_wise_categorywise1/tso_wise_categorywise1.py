@@ -261,7 +261,7 @@
 #                 "item_count":          0
 #             }
 
-#             if filters.get("show_item_details"): 
+#             if filters.get("show_item_details"):
 #                 entry["item_code"] = row.item_code
 #                 entry["item_name"] = row.item_name
 
@@ -455,13 +455,13 @@ def get_data(filters, categories):
         conditions.append("si.posting_date <= %(to_date)s")
         values["to_date"] = filters.get("to_date")
 
-    if filters.get("parent_sales_person"):
-        conditions.append("sp.parent_sales_person = %(parent_sales_person)s")
-        values["parent_sales_person"] = filters.get("parent_sales_person")
-
     if filters.get("sales_person"):
         conditions.append("sp.name = %(sales_person)s")
         values["sales_person"] = filters.get("sales_person")
+
+    if filters.get("parent_sales_person"):
+        conditions.append("sp.parent_sales_person = %(parent_sales_person)s")
+        values["parent_sales_person"] = filters.get("parent_sales_person")
 
     if filters.get("customer"):
         conditions.append("si.customer = %(customer)s")
@@ -511,14 +511,29 @@ def get_data(filters, categories):
     if filters.get("show_item_details"):
         group_by += ", sii.item_code, i.item_name"
 
+    # ── KEY FIX: removed AND st.idx = 1
+    # Now uses LEFT JOIN from Customer's Sales Team
+    # to get sales person even when idx != 1
     query = f"""
         SELECT
             DATE_FORMAT(si.posting_date, '%%Y-%%m') AS month_key,
             MONTH(si.posting_date)                  AS month_num,
             YEAR(si.posting_date)                   AS year,
-            sp.name                                 AS tso_name,
-            sp.parent_sales_person,
-            sp.custom_region,
+            COALESCE(
+                sp_inv.name,
+                sp_cust.name,
+                'Unassigned'
+            )                                       AS tso_name,
+            COALESCE(
+                sp_inv.parent_sales_person,
+                sp_cust.parent_sales_person,
+                ''
+            )                                       AS parent_sales_person,
+            COALESCE(
+                sp_inv.custom_region,
+                sp_cust.custom_region,
+                ''
+            )                                       AS custom_region,
             c.customer_name,
             i.custom_main_group                     AS category,
             sii.item_code,
@@ -527,28 +542,38 @@ def get_data(filters, categories):
             COUNT(DISTINCT si.name)                 AS invoice_count,
             COUNT(DISTINCT sii.item_code)           AS item_count
         FROM `tabSales Invoice` si
-        INNER JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
-        INNER JOIN `tabItem` i                 ON i.name = sii.item_code
-        LEFT JOIN `tabSales Team` st          ON st.parent = si.name 
-        LEFT JOIN `tabSales Person` sp        ON sp.name = st.sales_person
-        INNER JOIN `tabCustomer` c             ON c.name = si.customer
+        INNER JOIN `tabSales Invoice Item` sii  ON sii.parent = si.name
+        INNER JOIN `tabItem` i                  ON i.name = sii.item_code
+        INNER JOIN `tabCustomer` c              ON c.name = si.customer
+
+        -- Sales Person from Invoice Sales Team (any idx)
+        LEFT JOIN `tabSales Team` st_inv        ON st_inv.parent = si.name
+        LEFT JOIN `tabSales Person` sp_inv      ON sp_inv.name = st_inv.sales_person
+
+        -- Sales Person from Customer master Sales Team (fallback)
+        LEFT JOIN `tabSales Team` st_cust       ON st_cust.parent = si.customer
+                                                AND st_cust.parenttype = 'Customer'
+        LEFT JOIN `tabSales Person` sp_cust     ON sp_cust.name = st_cust.sales_person
+
         WHERE si.docstatus = 1
           AND i.custom_main_group IS NOT NULL
           AND i.custom_main_group != ''
           AND {where_clause}
         GROUP BY {group_by}
-        ORDER BY YEAR(si.posting_date), MONTH(si.posting_date), sp.name
+        ORDER BY YEAR(si.posting_date), MONTH(si.posting_date), tso_name
     """
 
     data = frappe.db.sql(query, values, as_dict=1)
     result = {}
 
     for row in data:
+        tso = row.tso_name or "Unassigned"
+
         if filters.get("show_item_details"):
-            key = (row.month_key, row.tso_name, row.customer_name,
+            key = (row.month_key, tso, row.customer_name,
                    row.parent_sales_person, row.custom_region, row.item_code)
         else:
-            key = (row.month_key, row.tso_name, row.customer_name,
+            key = (row.month_key, tso, row.customer_name,
                    row.parent_sales_person, row.custom_region)
 
         if key not in result:
@@ -556,10 +581,10 @@ def get_data(filters, categories):
                 "month":               f"{MONTHS[int(row.month_num)-1]}-{row.year}",
                 "month_num":           row.month_num,
                 "year":                row.year,
-                "tso_name":            row.tso_name or "Unassigned",
+                "tso_name":            tso,
                 "customer_name":       row.customer_name or "No Customer",
-                "parent_sales_person": row.parent_sales_person or "Unassigned",
-                "custom_region":       row.custom_region or "No Region",
+                "parent_sales_person": row.parent_sales_person or "",
+                "custom_region":       row.custom_region or "",
                 "total_achieved":      0,
                 "total_target":        0,
                 "invoice_count":       0,
@@ -574,7 +599,7 @@ def get_data(filters, categories):
                 safe = cat.replace(" ", "_").replace("-", "_")
                 entry[f"{safe}_achieved"] = 0
                 target_value = get_month_target_from_sales_team(
-                    row.tso_name, row.month_num, cat
+                    tso, row.month_num, cat
                 )
                 entry[f"{safe}_target"]  = flt(target_value)
                 entry["total_target"]   += flt(target_value)
@@ -605,5 +630,3 @@ def get_summary(data, categories):
         {"label": _("Invoice Count"),  "value": total_invoice,  "indicator": "Orange", "datatype": "Int"},
         {"label": _("Item Count"),     "value": total_item,     "indicator": "Purple", "datatype": "Int"},
     ]
-
-
