@@ -873,6 +873,7 @@ def get_data(filters, categories):
         -- Sales Person from Invoice Sales Team (priority)
         LEFT JOIN `tabSales Team` st_inv         ON st_inv.parent = si.name
                                                  AND st_inv.parenttype = 'Sales Invoice'
+                                                 AND st_inv.idx = 1
         LEFT JOIN `tabSales Person` sp_inv       ON sp_inv.name = st_inv.sales_person
 
         -- Sales Person from Customer master (fallback when invoice has none)
