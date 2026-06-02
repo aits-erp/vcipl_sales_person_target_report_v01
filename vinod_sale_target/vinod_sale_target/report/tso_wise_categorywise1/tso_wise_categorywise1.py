@@ -450,7 +450,7 @@ def _load_targets_for_tso(tso_name, month_num):
                 ON spt.name = mtd.parent
             WHERE mtd.sales_person = %(tso_name)s
               AND spt.period_type  = 'Monthly'
-              AND spt.docstatus    = 0
+              AND spt.docstatus    IN (0, 1)
         """, {"tso_name": tso_name}, as_dict=1)
 
         result = {r.main_group: flt(r.target_amount) for r in rows if r.main_group}
@@ -572,13 +572,11 @@ def get_data(filters, categories):
         INNER JOIN `tabItem` i                   ON i.name = sii.item_code
         INNER JOIN `tabCustomer` c               ON c.name = si.customer
 
-        -- Sales Person from Invoice Sales Team (priority)
         LEFT JOIN `tabSales Team` st_inv         ON st_inv.parent = si.name
                                                  AND st_inv.parenttype = 'Sales Invoice'
                                                  AND st_inv.idx = 1
         LEFT JOIN `tabSales Person` sp_inv       ON sp_inv.name = st_inv.sales_person
 
-        -- Sales Person from Customer master (fallback when invoice has none)
         LEFT JOIN `tabSales Team` st_cust        ON st_cust.parent = si.customer
                                                  AND st_cust.parenttype = 'Customer'
         LEFT JOIN `tabSales Person` sp_cust      ON sp_cust.name = st_cust.sales_person
@@ -586,25 +584,13 @@ def get_data(filters, categories):
         WHERE si.docstatus = 1
           AND i.custom_main_group IS NOT NULL
           AND i.custom_main_group != ''
+          AND {where_clause}
 
-        AND EXISTS (
-        SELECT 1
-        FROM `tabMonthly Target Detail` mtd
-        INNER JOIN `tabSales Person Target` spt
-        ON spt.name = mtd.parent
-        WHERE mtd.sales_person =
-        COALESCE(sp_inv.name, sp_cust.name)
-          AND spt.period_type = 'Monthly'
-          AND spt.docstatus = 1
-)
+        GROUP BY {group_by}
 
-AND {where_clause}
-
-GROUP BY {group_by}
-
-ORDER BY YEAR(si.posting_date),
-         MONTH(si.posting_date),
-         COALESCE(sp_inv.name, sp_cust.name, 'Unassigned')
+        ORDER BY YEAR(si.posting_date),
+                 MONTH(si.posting_date),
+                 COALESCE(sp_inv.name, sp_cust.name, 'Unassigned')
     """
 
     data = frappe.db.sql(query, values, as_dict=1)
