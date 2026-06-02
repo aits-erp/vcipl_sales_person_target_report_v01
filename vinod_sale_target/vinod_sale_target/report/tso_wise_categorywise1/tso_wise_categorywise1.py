@@ -77,17 +77,17 @@
 #         ])
 
 #     columns.extend([
-#         {"label": _("Month"),              "fieldname": "month",               "fieldtype": "Data",     "width": 100, "align": "center"},
-#         {"label": _("TSO"),                "fieldname": "tso_name",            "fieldtype": "Link",     "options": "Sales Person", "width": 200},
-#         {"label": _("Customer Name"),      "fieldname": "customer_name",       "fieldtype": "Data",     "width": 200},
-#         {"label": _("Region"),             "fieldname": "custom_region",       "fieldtype": "Data",     "width": 150},
-#         {"label": _("Head Sales Person"),  "fieldname": "parent_sales_person", "fieldtype": "Link",     "options": "Sales Person", "width": 200},
-#         {"label": _("Total Achieved"),     "fieldname": "total_achieved",      "fieldtype": "Currency", "width": 150},
-#         {"label": _("Total Target"),       "fieldname": "total_target",        "fieldtype": "Currency", "width": 150}
+#         {"label": _("Month"),             "fieldname": "month",               "fieldtype": "Data",     "width": 100, "align": "center"},
+#         {"label": _("TSO"),               "fieldname": "tso_name",            "fieldtype": "Link",     "options": "Sales Person", "width": 200},
+#         {"label": _("Customer Name"),     "fieldname": "customer_name",       "fieldtype": "Data",     "width": 200},
+#         {"label": _("Region"),            "fieldname": "custom_region",       "fieldtype": "Data",     "width": 150},
+#         {"label": _("Head Sales Person"), "fieldname": "parent_sales_person", "fieldtype": "Link",     "options": "Sales Person", "width": 200},
+#         {"label": _("Total Achieved"),    "fieldname": "total_achieved",      "fieldtype": "Currency", "width": 150},
+#         {"label": _("Total Target"),      "fieldname": "total_target",        "fieldtype": "Currency", "width": 150}
 #     ])
 
 #     for cat in categories:
-#         safe = cat.replace(" ", "_").replace("-", "_")
+#         safe = cat.replace(" ", "").replace("-", "")
 #         columns.append({"label": _(f"{cat} (Target)"),   "fieldname": f"{safe}_target",   "fieldtype": "Currency"})
 #         columns.append({"label": _(f"{cat} (Achieved)"), "fieldname": f"{safe}_achieved", "fieldtype": "Currency"})
 
@@ -151,9 +151,7 @@
 #         values["to_date"] = filters.get("to_date")
 
 #     if filters.get("sales_person"):
-#         conditions.append("""
-#             COALESCE(sp_inv.name, sp_cust.name) = %(sales_person)s
-#         """)
+#         conditions.append("COALESCE(sp_inv.name, sp_cust.name) = %(sales_person)s")
 #         values["sales_person"] = filters.get("sales_person")
 
 #     if filters.get("parent_sales_person"):
@@ -238,13 +236,11 @@
 #         INNER JOIN `tabItem` i                   ON i.name = sii.item_code
 #         INNER JOIN `tabCustomer` c               ON c.name = si.customer
 
-#         -- Sales Person from Invoice Sales Team (priority)
 #         LEFT JOIN `tabSales Team` st_inv         ON st_inv.parent = si.name
 #                                                  AND st_inv.parenttype = 'Sales Invoice'
 #                                                  AND st_inv.idx = 1
 #         LEFT JOIN `tabSales Person` sp_inv       ON sp_inv.name = st_inv.sales_person
 
-#         -- Sales Person from Customer master (fallback when invoice has none)
 #         LEFT JOIN `tabSales Team` st_cust        ON st_cust.parent = si.customer
 #                                                  AND st_cust.parenttype = 'Customer'
 #         LEFT JOIN `tabSales Person` sp_cust      ON sp_cust.name = st_cust.sales_person
@@ -252,6 +248,15 @@
 #         WHERE si.docstatus = 1
 #           AND i.custom_main_group IS NOT NULL
 #           AND i.custom_main_group != ''
+#           AND EXISTS (
+#               SELECT 1
+#               FROM `tabMonthly Target Detail` mtd
+#               INNER JOIN `tabSales Person Target` spt
+#                   ON spt.name = mtd.parent
+#               WHERE mtd.sales_person = COALESCE(sp_inv.name, sp_cust.name)
+#                 AND spt.period_type  = 'Monthly'
+#                 AND spt.docstatus    = 0
+#           )
 #           AND {where_clause}
 #         GROUP BY {group_by}
 #         ORDER BY YEAR(si.posting_date), MONTH(si.posting_date),
@@ -291,17 +296,15 @@
 #                 entry["item_name"] = row.item_name
 
 #             for cat in categories:
-#                 safe = cat.replace(" ", "_").replace("-", "_")
+#                 safe = cat.replace(" ", "").replace("-", "")
 #                 entry[f"{safe}_achieved"] = 0
-#                 target_value = get_month_target_from_sales_team(
-#                     tso, row.month_num, cat
-#                 )
+#                 target_value = get_month_target_from_sales_team(tso, row.month_num, cat)
 #                 entry[f"{safe}_target"]  = flt(target_value)
 #                 entry["total_target"]   += flt(target_value)
 
 #             result[key] = entry
 
-#         safe = row.category.replace(" ", "_").replace("-", "_")
+#         safe = row.category.replace(" ", "").replace("-", "")
 #         result[key][f"{safe}_achieved"] += flt(row.achieved)
 #         result[key]["total_achieved"]   += flt(row.achieved)
 #         result[key]["invoice_count"]    += int(row.invoice_count)
@@ -325,6 +328,7 @@
 #         {"label": _("Invoice Count"),  "value": total_invoice,  "indicator": "Orange", "datatype": "Int"},
 #         {"label": _("Item Count"),     "value": total_item,     "indicator": "Purple", "datatype": "Int"},
 #     ]
+
 
 
 
@@ -407,17 +411,17 @@ def get_columns(categories, filters=None):
         ])
 
     columns.extend([
-        {"label": _("Month"),             "fieldname": "month",               "fieldtype": "Data",     "width": 100, "align": "center"},
-        {"label": _("TSO"),               "fieldname": "tso_name",            "fieldtype": "Link",     "options": "Sales Person", "width": 200},
-        {"label": _("Customer Name"),     "fieldname": "customer_name",       "fieldtype": "Data",     "width": 200},
-        {"label": _("Region"),            "fieldname": "custom_region",       "fieldtype": "Data",     "width": 150},
-        {"label": _("Head Sales Person"), "fieldname": "parent_sales_person", "fieldtype": "Link",     "options": "Sales Person", "width": 200},
-        {"label": _("Total Achieved"),    "fieldname": "total_achieved",      "fieldtype": "Currency", "width": 150},
-        {"label": _("Total Target"),      "fieldname": "total_target",        "fieldtype": "Currency", "width": 150}
+        {"label": _("Month"),              "fieldname": "month",               "fieldtype": "Data",     "width": 100, "align": "center"},
+        {"label": _("TSO"),                "fieldname": "tso_name",            "fieldtype": "Link",     "options": "Sales Person", "width": 200},
+        {"label": _("Customer Name"),      "fieldname": "customer_name",       "fieldtype": "Data",     "width": 200},
+        {"label": _("Region"),             "fieldname": "custom_region",       "fieldtype": "Data",     "width": 150},
+        {"label": _("Head Sales Person"),  "fieldname": "parent_sales_person", "fieldtype": "Link",     "options": "Sales Person", "width": 200},
+        {"label": _("Total Achieved"),     "fieldname": "total_achieved",      "fieldtype": "Currency", "width": 150},
+        {"label": _("Total Target"),       "fieldname": "total_target",        "fieldtype": "Currency", "width": 150}
     ])
 
     for cat in categories:
-        safe = cat.replace(" ", "").replace("-", "")
+        safe = cat.replace(" ", "_").replace("-", "_")
         columns.append({"label": _(f"{cat} (Target)"),   "fieldname": f"{safe}_target",   "fieldtype": "Currency"})
         columns.append({"label": _(f"{cat} (Achieved)"), "fieldname": f"{safe}_achieved", "fieldtype": "Currency"})
 
@@ -481,7 +485,9 @@ def get_data(filters, categories):
         values["to_date"] = filters.get("to_date")
 
     if filters.get("sales_person"):
-        conditions.append("COALESCE(sp_inv.name, sp_cust.name) = %(sales_person)s")
+        conditions.append("""
+            COALESCE(sp_inv.name, sp_cust.name) = %(sales_person)s
+        """)
         values["sales_person"] = filters.get("sales_person")
 
     if filters.get("parent_sales_person"):
@@ -566,11 +572,13 @@ def get_data(filters, categories):
         INNER JOIN `tabItem` i                   ON i.name = sii.item_code
         INNER JOIN `tabCustomer` c               ON c.name = si.customer
 
+        -- Sales Person from Invoice Sales Team (priority)
         LEFT JOIN `tabSales Team` st_inv         ON st_inv.parent = si.name
                                                  AND st_inv.parenttype = 'Sales Invoice'
                                                  AND st_inv.idx = 1
         LEFT JOIN `tabSales Person` sp_inv       ON sp_inv.name = st_inv.sales_person
 
+        -- Sales Person from Customer master (fallback when invoice has none)
         LEFT JOIN `tabSales Team` st_cust        ON st_cust.parent = si.customer
                                                  AND st_cust.parenttype = 'Customer'
         LEFT JOIN `tabSales Person` sp_cust      ON sp_cust.name = st_cust.sales_person
@@ -578,19 +586,25 @@ def get_data(filters, categories):
         WHERE si.docstatus = 1
           AND i.custom_main_group IS NOT NULL
           AND i.custom_main_group != ''
-          AND EXISTS (
-              SELECT 1
-              FROM `tabMonthly Target Detail` mtd
-              INNER JOIN `tabSales Person Target` spt
-                  ON spt.name = mtd.parent
-              WHERE mtd.sales_person = COALESCE(sp_inv.name, sp_cust.name)
-                AND spt.period_type  = 'Monthly'
-                AND spt.docstatus    = 0
-          )
-          AND {where_clause}
-        GROUP BY {group_by}
-        ORDER BY YEAR(si.posting_date), MONTH(si.posting_date),
-                 COALESCE(sp_inv.name, sp_cust.name, 'Unassigned')
+
+        AND EXISTS (
+        SELECT 1
+        FROM `tabMonthly Target Detail` mtd
+        INNER JOIN `tabSales Person Target` spt
+        ON spt.name = mtd.parent
+        WHERE mtd.sales_person =
+        COALESCE(sp_inv.name, sp_cust.name)
+          AND spt.period_type = 'Monthly'
+          AND spt.docstatus = 1
+)
+
+AND {where_clause}
+
+GROUP BY {group_by}
+
+ORDER BY YEAR(si.posting_date),
+         MONTH(si.posting_date),
+         COALESCE(sp_inv.name, sp_cust.name, 'Unassigned')
     """
 
     data = frappe.db.sql(query, values, as_dict=1)
@@ -626,15 +640,17 @@ def get_data(filters, categories):
                 entry["item_name"] = row.item_name
 
             for cat in categories:
-                safe = cat.replace(" ", "").replace("-", "")
+                safe = cat.replace(" ", "_").replace("-", "_")
                 entry[f"{safe}_achieved"] = 0
-                target_value = get_month_target_from_sales_team(tso, row.month_num, cat)
+                target_value = get_month_target_from_sales_team(
+                    tso, row.month_num, cat
+                )
                 entry[f"{safe}_target"]  = flt(target_value)
                 entry["total_target"]   += flt(target_value)
 
             result[key] = entry
 
-        safe = row.category.replace(" ", "").replace("-", "")
+        safe = row.category.replace(" ", "_").replace("-", "_")
         result[key][f"{safe}_achieved"] += flt(row.achieved)
         result[key]["total_achieved"]   += flt(row.achieved)
         result[key]["invoice_count"]    += int(row.invoice_count)
