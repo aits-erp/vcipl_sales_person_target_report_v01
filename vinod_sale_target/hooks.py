@@ -5,6 +5,36 @@ app_description = "Created For report"
 app_email = "sukeshanee@gmail.com"
 app_license = "mit"
 
+doc_events = {
+    "Sales Invoice": {
+        "validate": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "on_update": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "before_submit": "vinod_sale_target.weight_amount.apply_weight_based_amount"
+    }
+}
+
+# ─── Fixtures ────────────────────────────────────────────────────────────────
+# This tells bench which Custom Field records to export/import automatically.
+# When you add more doctypes in future, just add their field names to the list.
+fixtures = [
+    {
+        "dt": "Custom Field",
+        "filters": [
+            [
+                "name",
+                "in",
+                [
+                    "Sales Invoice-custom_use_weight_based_amount",
+                    "Sales Invoice Item-custom_weight"
+                    # ↑ Add future doctype fields here, e.g.:
+                    # "Purchase Invoice-custom_use_weight_based_amount",
+                    # "Purchase Invoice Item-custom_weight",
+                ]
+            ]
+        ]
+    }
+]
+
 # Apps
 # ------------------
 

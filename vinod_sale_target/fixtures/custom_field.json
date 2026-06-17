@@ -1,0 +1,31 @@
+[
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-custom_use_weight_based_amount",
+    "dt": "Sales Invoice",
+    "fieldname": "custom_use_weight_based_amount",
+    "fieldtype": "Check",
+    "label": "Weight Based Amount",
+    "insert_after": "update_stock",
+    "in_list_view": 0,
+    "bold": 0,
+    "no_copy": 0,
+    "print_hide": 0,
+    "allow_on_submit": 0,
+    "description": ""
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice Item-custom_weight",
+    "dt": "Sales Invoice Item",
+    "fieldname": "custom_weight",
+    "fieldtype": "Float",
+    "label": "Weight",
+    "insert_after": "qty",
+    "in_list_view": 1,
+    "bold": 0,
+    "no_copy": 0,
+    "print_hide": 0,
+    "description": ""
+  }
+]
