@@ -1,70 +1,79 @@
-# __version__ = "0.0.1"
-
 
 # import frappe
 # from frappe.utils import flt
 
-# # 1. Target the core ERPNext calculations controller class
+# # Target the core taxes calculator backend module
 # from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 
-# # 2. Keep a backup copy of the standard ERPNext calculation loop
 # original_calculate_item_values = calculate_taxes_and_totals.calculate_item_values
 
 # def custom_calculate_item_values(self):
-#     # Run the original standard calculations first (calculates standard fields/taxes)
+#     # 1. Run the standard ERPNext calculation loop first
 #     original_calculate_item_values(self)
     
-#     # Check if our custom "Weight Based Amount" checkbox is checked on the invoice
+#     # 2. If our weight calculation feature is active, bypass the standard amounts entirely
 #     if self.doc.get("custom_use_weight_based_amount"):
 #         for item in self.doc.get("items"):
 #             weight = flt(item.get("custom_weight"))
 #             rate = flt(item.rate)
             
-#             # If weight and rate exist, forcefully replace the standard amount with our formula
+#             # Completely ignore item.qty here! We only care about weight * rate
 #             if weight > 0 and rate > 0:
 #                 custom_amount = flt(weight * rate, item.precision("amount"))
+                
+#                 # Assign to core database fields
 #                 item.amount = custom_amount
 #                 item.net_amount = custom_amount
                 
-#                 # Update currency conversion fields securely
+#                 # Synchronize base currency modifications
 #                 conv = flt(self.doc.conversion_rate or 1)
 #                 item.base_amount = flt(custom_amount * conv, item.precision("base_amount"))
 #                 item.base_net_amount = item.base_amount
 
-# # 3. Swap the original system method with our custom wrapper method
+# # Swap standard function with our strict quantity-isolated calculator
 # calculate_taxes_and_totals.calculate_item_values = custom_calculate_item_values
 
 
-import frappe
-from frappe.utils import flt
 
-# Target the core taxes calculator backend module
-from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
+# Keep standard metadata clear and readable for python packaging engines
+__version__ = "0.0.1"
 
-original_calculate_item_values = calculate_taxes_and_totals.calculate_item_values
+# Safe initialization wrapper block
+try:
+    import frappe
+    from frappe.utils import flt
+    from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 
-def custom_calculate_item_values(self):
-    # 1. Run the standard ERPNext calculation loop first
-    original_calculate_item_values(self)
-    
-    # 2. If our weight calculation feature is active, bypass the standard amounts entirely
-    if self.doc.get("custom_use_weight_based_amount"):
-        for item in self.doc.get("items"):
-            weight = flt(item.get("custom_weight"))
-            rate = flt(item.rate)
-            
-            # Completely ignore item.qty here! We only care about weight * rate
-            if weight > 0 and rate > 0:
-                custom_amount = flt(weight * rate, item.precision("amount"))
+    # Keep a backup copy of the standard ERPNext calculation loop
+    original_calculate_item_values = calculate_taxes_and_totals.calculate_item_values
+
+    def custom_calculate_item_values(self):
+        # 1. Run the standard ERPNext calculation loop first
+        original_calculate_item_values(self)
+        
+        # 2. If our weight calculation feature is active, bypass standard amounts completely
+        if self.doc.get("custom_use_weight_based_amount"):
+            for item in self.doc.get("items"):
+                weight = flt(item.get("custom_weight"))
+                rate = flt(item.rate)
                 
-                # Assign to core database fields
-                item.amount = custom_amount
-                item.net_amount = custom_amount
-                
-                # Synchronize base currency modifications
-                conv = flt(self.doc.conversion_rate or 1)
-                item.base_amount = flt(custom_amount * conv, item.precision("base_amount"))
-                item.base_net_amount = item.base_amount
+                # Completely ignore item.qty here! We only care about weight * rate
+                if weight > 0 and rate > 0:
+                    custom_amount = flt(weight * rate, item.precision("amount"))
+                    
+                    # Assign directly to core database fields
+                    item.amount = custom_amount
+                    item.net_amount = custom_amount
+                    
+                    # Synchronize base currency modifications securely
+                    conv = flt(self.doc.conversion_rate or 1)
+                    item.base_amount = flt(custom_amount * conv, item.precision("base_amount"))
+                    item.base_net_amount = item.base_amount
 
-# Swap standard function with our strict quantity-isolated calculator
-calculate_taxes_and_totals.calculate_item_values = custom_calculate_item_values
+    # Swap standard function with our strict quantity-isolated calculator
+    calculate_taxes_and_totals.calculate_item_values = custom_calculate_item_values
+
+except (ImportError, ModuleNotFoundError):
+    # If frappe isn't fully installed yet (like during bench get-app / pip installs / docker builds)
+    # pass silently so the package metadata can successfully compile
+    pass
