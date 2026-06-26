@@ -5,17 +5,30 @@ app_description = "Created For report"
 app_email = "sukeshanee@gmail.com"
 app_license = "mit"
 
+doctype_js = {
+    "Purchase Order": "public/js/sales_invoice_weight.js",
+    "Purchase Invoice": "public/js/sales_invoice_weight.js",
+    "Purchase Receipt": "public/js/sales_invoice_weight.js"
+}
+
 doc_events = {
-    "Sales Invoice": {
+    "Purchase Order": {
+        "validate": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "on_update": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "before_submit": "vinod_sale_target.weight_amount.apply_weight_based_amount"
+    },
+    "Purchase Invoice": {
+        "validate": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "on_update": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "before_submit": "vinod_sale_target.weight_amount.apply_weight_based_amount"
+    },
+    "Purchase Receipt": {
         "validate": "vinod_sale_target.weight_amount.apply_weight_based_amount",
         "on_update": "vinod_sale_target.weight_amount.apply_weight_based_amount",
         "before_submit": "vinod_sale_target.weight_amount.apply_weight_based_amount"
     }
 }
 
-# ─── Fixtures ────────────────────────────────────────────────────────────────
-# This tells bench which Custom Field records to export/import automatically.
-# When you add more doctypes in future, just add their field names to the list.
 fixtures = [
     {
         "dt": "Custom Field",
@@ -24,16 +37,18 @@ fixtures = [
                 "name",
                 "in",
                 [
-                    "Sales Invoice-custom_use_weight_based_amount",
-                    "Sales Invoice Item-custom_weight"
-                    # ↑ Add future doctype fields here, e.g.:
-                    # "Purchase Invoice-custom_use_weight_based_amount",
-                    # "Purchase Invoice Item-custom_weight",
+                    "Purchase Order-custom_use_weight_based_amount",
+                    "Purchase Order Item-custom_weight",
+                    "Purchase Invoice-custom_use_weight_based_amount",
+                    "Purchase Invoice Item-custom_weight",
+                    "Purchase Receipt-custom_use_weight_based_amount",
+                    "Purchase Receipt Item-custom_weight"
                 ]
             ]
         ]
     }
 ]
+
 
 # Apps
 # ------------------
