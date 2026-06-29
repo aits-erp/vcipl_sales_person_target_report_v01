@@ -320,3 +320,4 @@ frappe.query_reports["TEST REPORT"] = {
         });
     }
 };
+console.log("TEST REPORT JS LOADED");
