@@ -988,3 +988,106 @@ def add_region_chart(ws):
     chart.width = 20
 
     ws.add_chart(chart, "G2")
+
+@frappe.whitelist()
+def get_mis_dashboard_data(from_date=None, to_date=None):
+    filters = frappe._dict({
+        "from_date": from_date,
+        "to_date": to_date,
+        "customer_group": "Debtors Distributors"
+    })
+
+    categories = get_categories(filters)
+    data = get_data(filters, categories)
+
+    # --------------------------
+    # KPI Summary
+    # --------------------------
+    total_target = sum(flt(d.get("total_target")) for d in data)
+    total_achieved = sum(flt(d.get("total_achieved")) for d in data)
+    total_gap = total_target - total_achieved
+    total_achievement = (
+        total_achieved / total_target * 100
+        if total_target else 0
+    )
+
+    # --------------------------
+    # Category Summary
+    # --------------------------
+    category_summary = []
+
+    for cat in categories:
+        safe = safe_field(cat)
+
+        target = sum(flt(d.get(f"{safe}_target")) for d in data)
+        achieved = sum(flt(d.get(f"{safe}_achieved")) for d in data)
+
+        gap = target - achieved
+
+        category_summary.append({
+            "category": cat,
+            "target": target,
+            "achieved": achieved,
+            "gap": gap,
+            "achievement": achieved / target * 100 if target else 0
+        })
+
+    # --------------------------
+    # Area Summary
+    # --------------------------
+
+    AREA_MAP = {
+        "North": lambda r: r.get("custom_region") == "North",
+        "South": lambda r: r.get("custom_region") == "South",
+        "East": lambda r: r.get("custom_region") == "East",
+        "West": lambda r: r.get("custom_region") == "West",
+
+        "ROM": lambda r: r.get("custom_head_sales_code") == "HSROM",
+
+        "Mumbai AH": lambda r:
+            r.get("custom_territory") in [
+                "TSOMUM1",
+                "TSOMUM2",
+                "TSOMUM3",
+                "TSOMUM4",
+                "TSOMUM5"
+            ],
+
+        "Gujarat": lambda r:
+            r.get("custom_territory") in [
+                "TSOSRT1"
+            ],
+
+        "MPCG": lambda r:
+            r.get("custom_head_sales_code") == "HSMPCG",
+    }
+
+    area_summary = []
+
+    for area, condition in AREA_MAP.items():
+
+        rows = [x for x in data if condition(x)]
+
+        target = sum(flt(r.get("total_target")) for r in rows)
+        achieved = sum(flt(r.get("total_achieved")) for r in rows)
+
+        gap = target - achieved
+
+        area_summary.append({
+            "area": area,
+            "target": target,
+            "achieved": achieved,
+            "gap": gap,
+            "achievement": achieved / target * 100 if target else 0
+        })
+
+    return {
+        "kpi": {
+            "target": total_target,
+            "achieved": total_achieved,
+            "gap": total_gap,
+            "achievement": total_achievement
+        },
+        "category_summary": category_summary,
+        "area_summary": area_summary
+    }    

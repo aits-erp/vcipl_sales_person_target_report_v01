@@ -1,0 +1,21 @@
+{
+ "content": null,
+ "creation": "2026-06-29 16:52:53.639792",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2026-06-29 16:52:53.639792",
+ "modified_by": "Administrator",
+ "module": "vinod_sale_target",
+ "name": "sales-mis-dashboard",
+ "owner": "Administrator",
+ "page_name": "sales-mis-dashboard",
+ "roles": [
+  {}
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Sales MIS Dashboard"
+}
