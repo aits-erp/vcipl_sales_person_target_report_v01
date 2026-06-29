@@ -336,6 +336,7 @@ from frappe.utils import flt, getdate
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 from openpyxl.chart import BarChart, Reference
+from openpyxl.utils import get_column_letter
 
 
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -364,14 +365,22 @@ DEFAULT_CATEGORIES = [
     "Futuretec"
 ]
 
-REGION_VIEW_MAP = {
-    "North Detail": "North",
-    "South Detail": "South",
-    "East Detail": "East",
-    "West Detail": "West",
-    "Mumbai AH Detail": "Mumbai AH",
-    "ROM Detail": "ROM",
-    "Gujarat Detail": "Gujarat",
+SECTION_VIEW_MAP = {
+    "North Detail": ("custom_region", "North"),
+    "South Detail": ("custom_region", "South"),
+    "East Detail": ("custom_region", "East"),
+    "West Detail": ("custom_region", "West"),
+
+    # ROM is not stored in custom_region. It is stored in custom_head_sales_code.
+    "ROM Detail": ("custom_head_sales_code", ["HSROM"]),
+
+    # Mumbai AH is identified by territory codes.
+    "Mumbai AH Detail": ("custom_territory", [
+        "TSOMUM1", "TSOMUM2", "TSOMUM3", "TSOMUM4", "TSOMUM5"
+    ]),
+
+    # Gujarat currently available from your Sales Person data as Surat territory.
+    "Gujarat Detail": ("custom_territory", ["TSOSRT1"]),
 }
 
 _target_cache = {}
@@ -397,13 +406,20 @@ def execute(filters=None):
         columns = get_region_summary_columns()
         data = get_region_summary_data(raw_data)
 
-    elif view_type in REGION_VIEW_MAP:
-        selected_region = REGION_VIEW_MAP[view_type]
+    elif view_type in SECTION_VIEW_MAP:
+        fieldname, selected_value = SECTION_VIEW_MAP[view_type]
         columns = get_columns(categories, filters)
-        data = [
-            row for row in raw_data
-            if (row.get("custom_region") or "") == selected_region
-        ]
+
+        if isinstance(selected_value, list):
+            data = [
+                row for row in raw_data
+                if (row.get(fieldname) or "") in selected_value
+            ]
+        else:
+            data = [
+                row for row in raw_data
+                if (row.get(fieldname) or "") == selected_value
+            ]
 
     else:
         columns = get_columns(categories, filters)
@@ -573,6 +589,7 @@ def get_data(filters, categories):
         COALESCE(sp_inv.parent_sales_person, sp_cust.parent_sales_person, ''),
         COALESCE(sp_inv.custom_region, sp_cust.custom_region, ''),
         COALESCE(sp_inv.custom_territory, sp_cust.custom_territory, ''),
+        COALESCE(sp_inv.custom_head_sales_code, sp_cust.custom_head_sales_code, ''),
         c.customer_name,
         i.custom_main_group
     """
@@ -590,6 +607,7 @@ def get_data(filters, categories):
             COALESCE(sp_inv.parent_sales_person, sp_cust.parent_sales_person, '') AS parent_sales_person,
             COALESCE(sp_inv.custom_region, sp_cust.custom_region, '') AS custom_region,
             COALESCE(sp_inv.custom_territory, sp_cust.custom_territory, '') AS custom_territory,
+            COALESCE(sp_inv.custom_head_sales_code, sp_cust.custom_head_sales_code, '') AS custom_head_sales_code,
             c.customer_name,
             i.custom_main_group AS category,
             sii.item_code,
@@ -642,6 +660,7 @@ def get_data(filters, categories):
                 "parent_sales_person": row.parent_sales_person or "",
                 "custom_region": row.custom_region or "",
                 "custom_territory": row.custom_territory or "",
+                "custom_head_sales_code": row.custom_head_sales_code or "",
                 "total_achieved": 0,
                 "total_target": 0,
                 "achievement_percent": 0,
@@ -780,11 +799,24 @@ def download_mis_excel(**filters):
     make_region_summary_sheet(ws_chart, data)
     add_region_chart(ws_chart)
 
-    for region in ["North", "South", "East", "West", "Mumbai AH", "ROM", "Gujarat"]:
-        region_rows = [d for d in data if (d.get("custom_region") or "") == region]
-        if region_rows:
-            ws_sec = wb.create_sheet(region[:31])
-            make_tso_summary_sheet(ws_sec, region_rows, categories)
+    # Section-wise sheets like client workbook
+    for sheet_name, (fieldname, selected_value) in SECTION_VIEW_MAP.items():
+        clean_sheet_name = sheet_name.replace(" Detail", "")[:31]
+
+        if isinstance(selected_value, list):
+            section_rows = [
+                d for d in data
+                if (d.get(fieldname) or "") in selected_value
+            ]
+        else:
+            section_rows = [
+                d for d in data
+                if (d.get(fieldname) or "") == selected_value
+            ]
+
+        if section_rows:
+            ws_sec = wb.create_sheet(clean_sheet_name)
+            make_tso_summary_sheet(ws_sec, section_rows, categories)
 
     output = io.BytesIO()
     wb.save(output)
@@ -872,7 +904,7 @@ def make_tso_summary_sheet(ws, data, categories):
     ws.cell(total_row, 1).font = Font(bold=True)
 
     for col in range(4, len(headers)):
-        letter = ws.cell(1, col).column_letter
+        letter = get_column_letter(col)
         cell = ws.cell(total_row, col)
         cell.value = f"=SUM({letter}3:{letter}{total_row-1})"
         cell.font = Font(bold=True)
@@ -881,8 +913,8 @@ def make_tso_summary_sheet(ws, data, categories):
         cell.number_format = '#,##0.00'
 
     ach_cell = ws.cell(total_row, len(headers))
-    total_target_col = ws.cell(1, len(headers) - 2).column_letter
-    total_ach_col = ws.cell(1, len(headers) - 1).column_letter
+    total_target_col = get_column_letter(len(headers) - 2)
+    total_ach_col = get_column_letter(len(headers) - 1)
     ach_cell.value = f"={total_ach_col}{total_row}/{total_target_col}{total_row}"
     ach_cell.font = Font(bold=True)
     ach_cell.fill = PatternFill("solid", fgColor=total_fill)
@@ -897,7 +929,7 @@ def make_tso_summary_sheet(ws, data, categories):
     ws.column_dimensions["C"].width = 35
 
     for col in range(4, len(headers) + 1):
-        ws.column_dimensions[ws.cell(1, col).column_letter].width = 14
+        ws.column_dimensions[get_column_letter(col)].width = 14
 
 
 def make_region_summary_sheet(ws, data):
@@ -935,7 +967,7 @@ def make_region_summary_sheet(ws, data):
         row_no += 1
 
     for col in range(1, 6):
-        ws.column_dimensions[ws.cell(1, col).column_letter].width = 18
+        ws.column_dimensions[get_column_letter(col)].width = 18
 
 
 def add_region_chart(ws):
