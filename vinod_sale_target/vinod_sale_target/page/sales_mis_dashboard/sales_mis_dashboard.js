@@ -1,7 +1,7 @@
 frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
     let page = frappe.ui.make_app_page({
         parent: wrapper,
-        title: "Vinod Cookware — Performance Dashboard",
+        title: "Vinod Cookware — Sales MIS Dashboard",
         single_column: true
     });
 
@@ -10,54 +10,137 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
 
     $(page.body).html(`
         <style>
-            .mis-wrap { padding: 18px; background: #f6f8fb; }
-            .mis-header {
-                background: #0b6a57;
-                color: white;
-                padding: 14px 18px;
-                border-radius: 8px;
-                font-size: 20px;
-                font-weight: 700;
-                margin-bottom: 15px;
+            .mis-wrap {
+                padding: 18px;
+                background: #f5f7fb;
             }
+
+            .mis-header {
+                background: linear-gradient(135deg, #064e3b, #0f766e);
+                color: white;
+                padding: 18px 22px;
+                border-radius: 12px;
+                font-size: 22px;
+                font-weight: 800;
+                margin-bottom: 18px;
+                box-shadow: 0 6px 18px rgba(0,0,0,.12);
+            }
+
+            .mis-subtitle {
+                font-size: 13px;
+                font-weight: 400;
+                opacity: .9;
+                margin-top: 5px;
+            }
+
+            .mis-section-title {
+                font-size: 16px;
+                font-weight: 800;
+                color: #0b3d5c;
+                margin: 18px 0 10px;
+            }
+
+            .mis-btn-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+                gap: 12px;
+                margin-bottom: 18px;
+            }
+
+            .mis-btn {
+                padding: 15px 14px;
+                border-radius: 12px;
+                color: white;
+                font-weight: 800;
+                cursor: pointer;
+                text-align: center;
+                box-shadow: 0 6px 15px rgba(0,0,0,.15);
+                transition: all .2s ease;
+                min-height: 70px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+            }
+
+            .mis-btn:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 10px 25px rgba(0,0,0,.22);
+            }
+
+            .mis-btn small {
+                font-size: 11px;
+                opacity: .9;
+                margin-top: 4px;
+                font-weight: 600;
+            }
+
+            .green { background: linear-gradient(135deg, #047857, #10b981); }
+            .blue { background: linear-gradient(135deg, #1d4ed8, #2563eb); }
+            .purple { background: linear-gradient(135deg, #6b21a8, #9333ea); }
+            .orange { background: linear-gradient(135deg, #c2410c, #f97316); }
+            .red { background: linear-gradient(135deg, #991b1b, #dc2626); }
+            .teal { background: linear-gradient(135deg, #0f766e, #14b8a6); }
+            .dark { background: linear-gradient(135deg, #1f2937, #4b5563); }
+            .pink { background: linear-gradient(135deg, #be185d, #ec4899); }
+            .yellow { background: linear-gradient(135deg, #a16207, #eab308); }
+            .black { background: linear-gradient(135deg, #111827, #0f766e); }
+
             .mis-kpis {
                 display: grid;
-                grid-template-columns: repeat(4, 1fr);
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
                 gap: 14px;
                 margin-bottom: 18px;
             }
-            .kpi {
+
+            .kpi-card {
                 background: white;
-                border-radius: 10px;
+                border-radius: 12px;
                 padding: 16px;
-                box-shadow: 0 3px 10px rgba(0,0,0,.08);
-                border-left: 6px solid #0b6a57;
+                box-shadow: 0 4px 14px rgba(0,0,0,.08);
+                border-left: 6px solid #0f766e;
             }
-            .kpi .label { font-size: 13px; color: #666; }
-            .kpi .value { font-size: 22px; font-weight: 700; margin-top: 6px; }
+
+            .kpi-label {
+                font-size: 13px;
+                color: #64748b;
+                font-weight: 600;
+            }
+
+            .kpi-value {
+                font-size: 23px;
+                font-weight: 800;
+                margin-top: 6px;
+                color: #1e293b;
+            }
+
             .mis-grid {
                 display: grid;
-                grid-template-columns: 38% 62%;
-                gap: 15px;
+                grid-template-columns: 42% 58%;
+                gap: 14px;
             }
+
             .panel {
                 background: white;
-                border-radius: 10px;
+                border-radius: 12px;
                 padding: 14px;
-                box-shadow: 0 3px 10px rgba(0,0,0,.08);
-                margin-bottom: 15px;
+                box-shadow: 0 4px 14px rgba(0,0,0,.08);
+                margin-bottom: 14px;
             }
+
             .panel-title {
-                font-weight: 700;
+                font-weight: 800;
                 color: #0b3d5c;
                 margin-bottom: 10px;
-                font-size: 15px;
+                font-size: 14px;
             }
+
             table.mis-table {
                 width: 100%;
                 border-collapse: collapse;
                 font-size: 12px;
             }
+
             .mis-table th {
                 background: #0b3d5c;
                 color: white;
@@ -65,52 +148,114 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
                 border: 1px solid #ddd;
                 text-align: center;
             }
+
             .mis-table td {
                 padding: 6px;
                 border: 1px solid #ddd;
             }
+
             .target { background: #fff2cc; text-align: right; }
             .achieved { background: #ddebf7; text-align: right; }
             .gap { background: #fce4d6; text-align: right; }
-            .percent { background: #e2f0d9; text-align: right; font-weight: 700; }
-            .section-buttons {
-                display: grid;
-                grid-template-columns: repeat(5, 1fr);
-                gap: 10px;
-                margin-bottom: 15px;
+            .percent { background: #e2f0d9; text-align: right; font-weight: 800; }
+
+            @media(max-width: 900px) {
+                .mis-grid {
+                    grid-template-columns: 1fr;
+                }
             }
-            .sec-btn {
-                padding: 14px;
-                border-radius: 9px;
-                color: white;
-                font-weight: 700;
-                cursor: pointer;
-                text-align: center;
-                box-shadow: 0 3px 10px rgba(0,0,0,.12);
-            }
-            .green { background: #0b6a57; }
-            .blue { background: #1f4e78; }
-            .orange { background: #c65d00; }
-            .purple { background: #5b2c83; }
-            .red { background: #922b21; }
         </style>
 
         <div class="mis-wrap">
-            <div class="mis-header">Vinod Cookware — Q1 Performance Dashboard</div>
+            <div class="mis-header">
+                Vinod Cookware — Q1 Performance Dashboard
+                <div class="mis-subtitle">
+                    One-click MIS dashboard with all worksheet sections and full Excel download.
+                </div>
+            </div>
 
-            <div class="section-buttons">
-                <div class="sec-btn green" data-view="TSO Summary">TSO Summary</div>
-                <div class="sec-btn blue" data-view="Region Summary">Region Summary</div>
-                <div class="sec-btn purple" data-view="Mumbai AH Detail">Mumbai AH</div>
-                <div class="sec-btn orange" data-view="ROM Detail">ROM</div>
-                <div class="sec-btn red" data-view="Gujarat Detail">Gujarat</div>
+            <div class="mis-section-title">Worksheet Reports</div>
+            <div class="mis-btn-grid">
+
+                <div class="mis-btn green" data-view="TSO Summary">
+                    TSO Summary
+                    <small>Distributor-wise target vs achievement</small>
+                </div>
+
+                <div class="mis-btn blue" data-view="Region Summary">
+                    Region Summary
+                    <small>Area-wise consolidated report</small>
+                </div>
+
+                <div class="mis-btn purple" id="charts-section">
+                    Charts
+                    <small>Category and area performance charts</small>
+                </div>
+
+                <div class="mis-btn pink" data-view="Mumbai AH Detail">
+                    Mumbai AH Details
+                    <small>TSOMUM1 to TSOMUM5</small>
+                </div>
+
+                <div class="mis-btn orange" data-view="ROM Detail">
+                    ROM Details
+                    <small>HSROM</small>
+                </div>
+
+                <div class="mis-btn yellow" data-view="MPCG Detail">
+                    MPCG Details
+                    <small>HSMPCG</small>
+                </div>
+
+                <div class="mis-btn red" data-view="Gujarat Detail">
+                    Gujarat Details
+                    <small>TSOSRT1</small>
+                </div>
+
+                <div class="mis-btn blue" data-view="North TSO Detail">
+                    North TSO Details
+                    <small>North region detail</small>
+                </div>
+
+                <div class="mis-btn teal" data-view="East TSO Detail">
+                    East TSO Details
+                    <small>East region detail</small>
+                </div>
+
+                <div class="mis-btn green" data-view="South TSO Detail">
+                    South TSO Details
+                    <small>South region detail</small>
+                </div>
+
+                <div class="mis-btn dark" data-view="West TSO Detail">
+                    West TSO Details
+                    <small>West region detail</small>
+                </div>
+
+                <div class="mis-btn black" id="download-full-excel">
+                    Download Full MIS Excel
+                    <small>Download all worksheet reports</small>
+                </div>
+
             </div>
 
             <div class="mis-kpis">
-                <div class="kpi"><div class="label">Total Target</div><div class="value" id="total-target">0</div></div>
-                <div class="kpi"><div class="label">Total Achieved</div><div class="value" id="total-achieved">0</div></div>
-                <div class="kpi"><div class="label">Not Achieved</div><div class="value" id="total-gap">0</div></div>
-                <div class="kpi"><div class="label">Achievement %</div><div class="value" id="total-achievement">0%</div></div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Target</div>
+                    <div class="kpi-value" id="total-target">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Achieved</div>
+                    <div class="kpi-value" id="total-achieved">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Not Achieved</div>
+                    <div class="kpi-value" id="total-gap">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Achievement %</div>
+                    <div class="kpi-value" id="total-achievement">0%</div>
+                </div>
             </div>
 
             <div class="mis-grid">
@@ -161,8 +306,30 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
         });
     }
 
-    $(page.body).find(".sec-btn").on("click", function() {
+    $(page.body).find(".mis-btn[data-view]").on("click", function() {
         open_report($(this).data("view"));
+    });
+
+    $(page.body).find("#charts-section").on("click", function() {
+        $("html, body").animate({
+            scrollTop: $("#category-chart").offset().top - 120
+        }, 400);
+    });
+
+    $(page.body).find("#download-full-excel").on("click", function() {
+        let filters = {
+            from_date: from_date,
+            to_date: to_date,
+            customer_group: "Debtors Distributors",
+            view_type: "TSO Summary"
+        };
+
+        let query = new URLSearchParams(filters).toString();
+
+        window.open(
+            "/api/method/vinod_sale_target.vinod_sale_target.report.test_report.test_report.download_mis_excel?"
+            + query
+        );
     });
 
     frappe.call({
@@ -172,17 +339,22 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
             to_date: to_date
         },
         callback: function(r) {
-            let d = r.message;
+            let d = r.message || {};
+            let kpi = d.kpi || {};
 
-            $("#total-target").text(money(d.total_target));
-            $("#total-achieved").text(money(d.total_achieved));
-            $("#total-gap").text(money(d.total_gap));
-            $("#total-achievement").text(pct(d.total_achievement));
+            $("#total-target").text(money(kpi.target));
+            $("#total-achieved").text(money(kpi.achieved));
+            $("#total-gap").text(money(kpi.gap));
+            $("#total-achievement").text(pct(kpi.achievement));
 
-            render_category_table(d.category_summary);
-            render_area_table(d.area_summary);
-            render_gap_table(d.area_summary);
-            render_charts(d.category_summary, d.area_summary);
+            render_category_table(d.category_summary || []);
+            render_area_table(d.area_summary || []);
+            render_gap_table(d.area_summary || []);
+            render_charts(d.category_summary || [], d.area_summary || []);
+        },
+        error: function(err) {
+            frappe.msgprint("Dashboard data could not be loaded. Please check server error log.");
+            console.error(err);
         }
     });
 
@@ -200,7 +372,7 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
         rows.forEach(r => {
             html += `
                 <tr>
-                    <td>${r.category}</td>
+                    <td>${r.category || ""}</td>
                     <td class="target">${money(r.target)}</td>
                     <td class="achieved">${money(r.achieved)}</td>
                     <td class="gap">${money(r.gap)}</td>
@@ -226,7 +398,7 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
         rows.forEach(r => {
             html += `
                 <tr>
-                    <td>${r.area}</td>
+                    <td>${r.area || ""}</td>
                     <td class="target">${money(r.target)}</td>
                     <td class="achieved">${money(r.achieved)}</td>
                     <td class="gap">${money(r.gap)}</td>
@@ -239,7 +411,7 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
     }
 
     function render_gap_table(rows) {
-        rows = rows.slice().sort((a, b) => b.gap - a.gap);
+        rows = rows.slice().sort((a, b) => (b.gap || 0) - (a.gap || 0));
 
         let html = `
             <tr>
@@ -254,7 +426,7 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
         rows.forEach(r => {
             html += `
                 <tr>
-                    <td>${r.area}</td>
+                    <td>${r.area || ""}</td>
                     <td class="target">${money(r.target)}</td>
                     <td class="achieved">${money(r.achieved)}</td>
                     <td class="gap">${money(r.gap)}</td>
@@ -267,32 +439,39 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
     }
 
     function render_charts(category_rows, area_rows) {
-        new frappe.Chart("#category-chart", {
-            title: "Category — Achieved vs Gap",
-            data: {
-                labels: category_rows.map(r => r.category),
-                datasets: [
-                    { name: "Achieved", values: category_rows.map(r => r.achieved) },
-                    { name: "Not Achieved", values: category_rows.map(r => Math.max(r.gap, 0)) }
-                ]
-            },
-            type: "bar",
-            height: 280,
-            colors: ["#4F81BD", "#C0504D"]
-        });
+        $("#category-chart").empty();
+        $("#area-chart").empty();
 
-        new frappe.Chart("#area-chart", {
-            title: "Area — Achieved vs Gap",
-            data: {
-                labels: area_rows.map(r => r.area),
-                datasets: [
-                    { name: "Achieved", values: area_rows.map(r => r.achieved) },
-                    { name: "Not Achieved", values: area_rows.map(r => Math.max(r.gap, 0)) }
-                ]
-            },
-            type: "bar",
-            height: 320,
-            colors: ["#4F81BD", "#C0504D"]
-        });
+        if (category_rows.length) {
+            new frappe.Chart("#category-chart", {
+                title: "Category — Achieved vs Gap",
+                data: {
+                    labels: category_rows.map(r => r.category),
+                    datasets: [
+                        { name: "Achieved", values: category_rows.map(r => r.achieved || 0) },
+                        { name: "Not Achieved", values: category_rows.map(r => Math.max(r.gap || 0, 0)) }
+                    ]
+                },
+                type: "bar",
+                height: 300,
+                colors: ["#4F81BD", "#C0504D"]
+            });
+        }
+
+        if (area_rows.length) {
+            new frappe.Chart("#area-chart", {
+                title: "Area — Achieved vs Gap",
+                data: {
+                    labels: area_rows.map(r => r.area),
+                    datasets: [
+                        { name: "Achieved", values: area_rows.map(r => r.achieved || 0) },
+                        { name: "Not Achieved", values: area_rows.map(r => Math.max(r.gap || 0, 0)) }
+                    ]
+                },
+                type: "bar",
+                height: 330,
+                colors: ["#4F81BD", "#C0504D"]
+            });
+        }
     }
 };

@@ -365,21 +365,35 @@ DEFAULT_CATEGORIES = [
     "Futuretec"
 ]
 
+# SECTION_VIEW_MAP = {
+#     "North Detail": ("custom_region", "North"),
+#     "South Detail": ("custom_region", "South"),
+#     "East Detail": ("custom_region", "East"),
+#     "West Detail": ("custom_region", "West"),
+
+#     # ROM is not stored in custom_region. It is stored in custom_head_sales_code.
+#     "ROM Detail": ("custom_head_sales_code", ["HSROM"]),
+
+#     # Mumbai AH is identified by territory codes.
+#     "Mumbai AH Detail": ("custom_territory", [
+#         "TSOMUM1", "TSOMUM2", "TSOMUM3", "TSOMUM4", "TSOMUM5"
+#     ]),
+
+#     # Gujarat currently available from your Sales Person data as Surat territory.
+#     "Gujarat Detail": ("custom_territory", ["TSOSRT1"]),
+# }
 SECTION_VIEW_MAP = {
-    "North Detail": ("custom_region", "North"),
-    "South Detail": ("custom_region", "South"),
-    "East Detail": ("custom_region", "East"),
-    "West Detail": ("custom_region", "West"),
+    "North TSO Detail": ("custom_region", "North"),
+    "East TSO Detail": ("custom_region", "East"),
+    "South TSO Detail": ("custom_region", "South"),
+    "West TSO Detail": ("custom_region", "West"),
 
-    # ROM is not stored in custom_region. It is stored in custom_head_sales_code.
-    "ROM Detail": ("custom_head_sales_code", ["HSROM"]),
-
-    # Mumbai AH is identified by territory codes.
     "Mumbai AH Detail": ("custom_territory", [
         "TSOMUM1", "TSOMUM2", "TSOMUM3", "TSOMUM4", "TSOMUM5"
     ]),
 
-    # Gujarat currently available from your Sales Person data as Surat territory.
+    "ROM Detail": ("custom_head_sales_code", ["HSROM"]),
+    "MPCG Detail": ("custom_head_sales_code", ["HSMPCG"]),
     "Gujarat Detail": ("custom_territory", ["TSOSRT1"]),
 }
 

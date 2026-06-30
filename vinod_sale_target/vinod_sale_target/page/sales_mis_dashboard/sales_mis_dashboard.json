@@ -4,14 +4,16 @@
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2026-06-29 16:52:53.639792",
+ "modified": "2026-06-30 10:13:53.977021",
  "modified_by": "Administrator",
  "module": "vinod_sale_target",
  "name": "sales-mis-dashboard",
  "owner": "Administrator",
  "page_name": "sales-mis-dashboard",
  "roles": [
-  {}
+  {
+   "role": "All"
+  }
  ],
  "script": null,
  "standard": "Yes",
