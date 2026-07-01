@@ -8,7 +8,13 @@ app_license = "mit"
 doctype_js = {
     "Purchase Order": "public/js/sales_invoice_weight.js",
     "Purchase Invoice": "public/js/sales_invoice_weight.js",
-    "Purchase Receipt": "public/js/sales_invoice_weight.js"
+    "Purchase Receipt": "public/js/sales_invoice_weight.js",
+    "Material Request": "public/js/sales_invoice_weight.js",
+    "Stock Entry": "public/js/sales_invoice_weight.js",
+    "Delivery Note": "public/js/sales_invoice_weight.js",
+    "Sales Order": "public/js/sales_invoice_weight.js",
+    "Quotation": "public/js/sales_invoice_weight.js",
+    "Sales Invoice": "public/js/sales_invoice_weight.js"
 }
 
 doc_events = {
@@ -23,6 +29,36 @@ doc_events = {
         "before_submit": "vinod_sale_target.weight_amount.apply_weight_based_amount"
     },
     "Purchase Receipt": {
+        "validate": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "on_update": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "before_submit": "vinod_sale_target.weight_amount.apply_weight_based_amount"
+    },
+    "Material Request": {
+        "validate": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "on_update": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "before_submit": "vinod_sale_target.weight_amount.apply_weight_based_amount"
+    },
+    "Stock Entry": {
+        "validate": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "on_update": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "before_submit": "vinod_sale_target.weight_amount.apply_weight_based_amount"
+    },
+    "Delivery Note": {
+        "validate": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "on_update": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "before_submit": "vinod_sale_target.weight_amount.apply_weight_based_amount"
+    },
+    "Sales Order": {
+        "validate": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "on_update": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "before_submit": "vinod_sale_target.weight_amount.apply_weight_based_amount"
+    },
+    "Quotation": {
+        "validate": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "on_update": "vinod_sale_target.weight_amount.apply_weight_based_amount",
+        "before_submit": "vinod_sale_target.weight_amount.apply_weight_based_amount"
+    },
+    "Sales Invoice": {
         "validate": "vinod_sale_target.weight_amount.apply_weight_based_amount",
         "on_update": "vinod_sale_target.weight_amount.apply_weight_based_amount",
         "before_submit": "vinod_sale_target.weight_amount.apply_weight_based_amount"
@@ -42,13 +78,22 @@ fixtures = [
                     "Purchase Invoice-custom_use_weight_based_amount",
                     "Purchase Invoice Item-custom_weight",
                     "Purchase Receipt-custom_use_weight_based_amount",
-                    "Purchase Receipt Item-custom_weight"
+                    "Purchase Receipt Item-custom_weight",
+                    "Material Request-custom_use_weight_based_amount",
+                    "Material Request Item-custom_weight",
+                    "Stock Entry-custom_use_weight_based_amount",
+                    "Stock Entry Detail-custom_weight",
+                    "Delivery Note-custom_use_weight_based_amount",
+                    "Delivery Note Item-custom_weight",
+                    "Sales Order-custom_use_weight_based_amount",
+                    "Sales Order Item-custom_weight",
+                    "Quotation-custom_use_weight_based_amount",
+                    "Quotation Item-custom_weight"
                 ]
             ]
         ]
     }
 ]
-
 
 # Apps
 # ------------------
