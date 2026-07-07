@@ -278,22 +278,10 @@ function wba_run_calculations(frm) {
     }
 
     if (frm.cscript && typeof frm.cscript.calculate_taxes_and_totals === "function") {
-        frm.cscript.calculate_taxes_and_totals(frm.doc);
+    frm.cscript.calculate_taxes_and_totals(frm.doc);
 
-        let tax_total = 0;
-        (frm.doc.taxes || []).forEach(t => {
-            tax_total += flt(t.tax_amount_after_discount_amount);
-        });
-
-        if (frm.doc.hasOwnProperty("grand_total")) {
-            let ultimate_total = (frm.doc.net_total || net_total) + tax_total;
-            frm.doc.grand_total = flt(ultimate_total, precision("grand_total"));
-            frm.doc.rounded_total = Math.round(frm.doc.grand_total);
-            frm.doc.outstanding_amount = frm.doc.rounded_total;
-
-            frm.refresh_field("grand_total");
-            frm.refresh_field("rounded_total");
-            frm.refresh_field("outstanding_amount");
-        }
+    frm.refresh_field("grand_total");
+    frm.refresh_field("rounded_total");
+    frm.refresh_field("outstanding_amount");
     }
-}
+}   
