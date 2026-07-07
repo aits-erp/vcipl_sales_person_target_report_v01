@@ -382,19 +382,74 @@ DEFAULT_CATEGORIES = [
 #     # Gujarat currently available from your Sales Person data as Surat territory.
 #     "Gujarat Detail": ("custom_territory", ["TSOSRT1"]),
 # }
+# SECTION_VIEW_MAP = {
+#     "North TSO Detail": ("custom_region", "North"),
+#     "East TSO Detail": ("custom_region", "East"),
+#     "South TSO Detail": ("custom_region", "South"),
+#     "West TSO Detail": ("custom_region", "West"),
+
+#     "Mumbai AH Detail": ("custom_territory", [
+#         "TSOMUM1", "TSOMUM2", "TSOMUM3", "TSOMUM4", "TSOMUM5"
+#     ]),
+
+#     "ROM Detail": ("custom_head_sales_code", ["HSROM"]),
+#     "MPCG Detail": ("custom_head_sales_code", ["HSMPCG"]),
+#     "Gujarat Detail": ("custom_territory", ["TSOSRT1"]),
+# }
+
 SECTION_VIEW_MAP = {
-    "North TSO Detail": ("custom_region", "North"),
-    "East TSO Detail": ("custom_region", "East"),
-    "South TSO Detail": ("custom_region", "South"),
-    "West TSO Detail": ("custom_region", "West"),
 
-    "Mumbai AH Detail": ("custom_territory", [
-        "TSOMUM1", "TSOMUM2", "TSOMUM3", "TSOMUM4", "TSOMUM5"
-    ]),
+    # -------------------------------
+    # Region-wise
+    # -------------------------------
+    "North TSO Detail": (
+        "parent_sales_person",
+        ["Rajiv K Dutta"]
+    ),
 
-    "ROM Detail": ("custom_head_sales_code", ["HSROM"]),
-    "MPCG Detail": ("custom_head_sales_code", ["HSMPCG"]),
-    "Gujarat Detail": ("custom_territory", ["TSOSRT1"]),
+    "East TSO Detail": (
+        "parent_sales_person",
+        ["Pannalal Bhattacharya"]
+    ),
+
+    "South TSO Detail": (
+        "parent_sales_person",
+        ["Mohammed Muqeemudheen Cherayakkuth"]
+    ),
+
+    # West Region = Combination of 4 Head Sales Persons
+    "West TSO Detail": (
+        "parent_sales_person",
+        [
+            "Sandeep Kumar",                  # ROM
+            "Jaydeo Deshmukh",                # MPCG
+            "Muslim Abdulla Hakim (Aslam)",   # Mumbai AH
+            "MAYUR TALATI"                    # Gujarat
+        ]
+    ),
+
+    # -------------------------------
+    # Individual Sections
+    # -------------------------------
+    "ROM Detail": (
+        "parent_sales_person",
+        ["Sandeep Kumar"]
+    ),
+
+    "MPCG Detail": (
+        "parent_sales_person",
+        ["Jaydeo Deshmukh"]
+    ),
+
+    "Mumbai AH Detail": (
+        "parent_sales_person",
+        ["Muslim Abdulla Hakim (Aslam)"]
+    ),
+
+    "Gujarat Detail": (
+        "parent_sales_person",
+        ["MAYUR TALATI"]
+    ),
 }
 
 _target_cache = {}
@@ -420,20 +475,32 @@ def execute(filters=None):
         columns = get_region_summary_columns()
         data = get_region_summary_data(raw_data)
 
+    # elif view_type in SECTION_VIEW_MAP:
+    #     fieldname, selected_value = SECTION_VIEW_MAP[view_type]
+    #     columns = get_columns(categories, filters)
+
+    #     if isinstance(selected_value, list):
+    #         data = [
+    #             row for row in raw_data
+    #             if (row.get(fieldname) or "") in selected_value
+    #         ]
+    #     else:
+    #         data = [
+    #             row for row in raw_data
+    #             if (row.get(fieldname) or "") == selected_value
+    #         ]
+
     elif view_type in SECTION_VIEW_MAP:
-        fieldname, selected_value = SECTION_VIEW_MAP[view_type]
+        fieldname, selected_values = SECTION_VIEW_MAP[view_type]
         columns = get_columns(categories, filters)
 
-        if isinstance(selected_value, list):
-            data = [
-                row for row in raw_data
-                if (row.get(fieldname) or "") in selected_value
-            ]
-        else:
-            data = [
-                row for row in raw_data
-                if (row.get(fieldname) or "") == selected_value
-            ]
+        if not isinstance(selected_values, list):
+            selected_values = [selected_values]
+
+        data = [
+            row for row in raw_data
+            if (row.get(fieldname) or "").strip() in selected_values
+        ]
 
     else:
         columns = get_columns(categories, filters)
@@ -1064,7 +1131,7 @@ def get_mis_dashboard_data(from_date=None, to_date=None):
                 "TSOMUM2",
                 "TSOMUM3",
                 "TSOMUM4",
-                "TSOMUM5"
+                "TSOMUM5" 
             ],
 
         "Gujarat": lambda r:
