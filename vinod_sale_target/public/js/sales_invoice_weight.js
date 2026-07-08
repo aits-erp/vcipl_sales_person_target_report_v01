@@ -185,7 +185,6 @@
 //     }
 // }
 
-
 const WBA_PARENT_DOCTYPES = [
     "Purchase Order", "Purchase Invoice", "Purchase Receipt",
     "Material Request", "Stock Entry", "Delivery Note",
@@ -200,8 +199,15 @@ const WBA_CHILD_DOCTYPES = [
 
 WBA_PARENT_DOCTYPES.forEach(dt => {
     frappe.ui.form.on(dt, {
-        refresh(frm) {},
         custom_use_weight_based_amount(frm) {
+            wba_run_calculations(frm);
+        },
+
+        validate(frm) {
+            wba_run_calculations(frm);
+        },
+
+        before_save(frm) {
             wba_run_calculations(frm);
         }
     });
@@ -212,15 +218,15 @@ WBA_CHILD_DOCTYPES.forEach(cdt => {
         custom_weight(frm, cdt, cdn) {
             wba_calculate_row(frm, cdt, cdn);
         },
+
         rate(frm, cdt, cdn) {
             wba_calculate_row(frm, cdt, cdn);
         },
+
         basic_rate(frm, cdt, cdn) {
             wba_calculate_row(frm, cdt, cdn);
         },
-        qty(frm, cdt, cdn) {
-            wba_calculate_row(frm, cdt, cdn);
-        },
+
         items_remove(frm) {
             wba_run_calculations(frm);
         }
@@ -234,52 +240,127 @@ function wba_calculate_row(frm, cdt, cdn) {
     let weight = flt(item.custom_weight);
     let rate = flt(item.rate || item.basic_rate || 0);
 
-    if (weight > 0 && rate > 0) {
-        let target_amount = flt(weight * rate, precision("amount", item) || 2);
-
-        if (item.hasOwnProperty("amount")) {
-            frappe.model.set_value(cdt, cdn, "amount", target_amount);
-        }
-        if (item.hasOwnProperty("net_amount")) {
-            frappe.model.set_value(cdt, cdn, "net_amount", target_amount);
-        }
-        if (item.hasOwnProperty("basic_amount")) {
-            frappe.model.set_value(cdt, cdn, "basic_amount", target_amount);
-        }
-
-        let conv = flt(frm.doc.conversion_rate || 1);
-
-        if (item.hasOwnProperty("base_amount")) {
-            frappe.model.set_value(cdt, cdn, "base_amount", flt(target_amount * conv, precision("base_amount", item)));
-        }
-        if (item.hasOwnProperty("base_net_amount")) {
-            frappe.model.set_value(cdt, cdn, "base_net_amount", flt(target_amount * conv, precision("base_net_amount", item)));
-        }
+    if (weight <= 0 || rate <= 0) {
+        return;
     }
 
-    wba_run_calculations(frm);
+    let amount = flt(weight * rate, precision("amount", item) || 2);
+    let conv = flt(frm.doc.conversion_rate || 1);
+
+    if (item.hasOwnProperty("qty")) {
+        frappe.model.set_value(cdt, cdn, "qty", weight);
+    }
+
+    if (item.hasOwnProperty("amount")) {
+        frappe.model.set_value(cdt, cdn, "amount", amount);
+    }
+
+    if (item.hasOwnProperty("net_amount")) {
+        frappe.model.set_value(cdt, cdn, "net_amount", amount);
+    }
+
+    if (item.hasOwnProperty("basic_amount")) {
+        frappe.model.set_value(cdt, cdn, "basic_amount", amount);
+    }
+
+    if (item.hasOwnProperty("base_amount")) {
+        frappe.model.set_value(cdt, cdn, "base_amount", flt(amount * conv));
+    }
+
+    if (item.hasOwnProperty("base_net_amount")) {
+        frappe.model.set_value(cdt, cdn, "base_net_amount", flt(amount * conv));
+    }
+
+    if (item.hasOwnProperty("net_rate")) {
+        frappe.model.set_value(cdt, cdn, "net_rate", rate);
+    }
+
+    if (item.hasOwnProperty("base_net_rate")) {
+        frappe.model.set_value(cdt, cdn, "base_net_rate", flt(rate * conv));
+    }
+
+    setTimeout(() => {
+        wba_run_calculations(frm);
+    }, 300);
 }
 
 function wba_run_calculations(frm) {
     if (!frm.doc.custom_use_weight_based_amount) return;
 
     let net_total = 0;
+    let base_net_total = 0;
 
     (frm.doc.items || []).forEach(row => {
         net_total += flt(row.net_amount || row.amount || row.basic_amount || 0);
+        base_net_total += flt(row.base_net_amount || row.base_amount || 0);
     });
 
-    if (frm.doc.hasOwnProperty("net_total")) {
-        frm.doc.net_total = net_total;
-        frm.refresh_field("net_total");
+    if (!base_net_total) {
+        base_net_total = net_total;
     }
 
-    if (frm.doc.hasOwnProperty("total")) {
-        frm.doc.total = net_total;
-        frm.refresh_field("total");
-    }
+    frm.doc.net_total = flt(net_total);
+    frm.doc.total = flt(net_total);
+    frm.doc.base_net_total = flt(base_net_total);
+    frm.doc.base_total = flt(base_net_total);
+
+    frm.refresh_field("net_total");
+    frm.refresh_field("total");
+    frm.refresh_field("base_net_total");
+    frm.refresh_field("base_total");
 
     if (frm.cscript && typeof frm.cscript.calculate_taxes_and_totals === "function") {
-        frm.cscript.calculate_taxes_and_totals(frm.doc);
+        frm.cscript.calculate_taxes_and_totals();
     }
+
+    setTimeout(() => {
+        wba_fix_tax_totals(frm);
+    }, 300);
+}
+
+function wba_fix_tax_totals(frm) {
+    if (!frm.doc.custom_use_weight_based_amount) return;
+
+    let total = flt(frm.doc.net_total);
+    let base_total = flt(frm.doc.base_net_total || frm.doc.net_total);
+
+    (frm.doc.taxes || []).forEach(tax => {
+        let tax_amount = flt(tax.tax_amount);
+        let base_tax_amount = flt(tax.base_tax_amount || tax.tax_amount);
+
+        if (tax.add_deduct_tax === "Deduct") {
+            total -= tax_amount;
+            base_total -= base_tax_amount;
+        } else {
+            total += tax_amount;
+            base_total += base_tax_amount;
+        }
+
+        tax.total = flt(total);
+        tax.base_total = flt(base_total);
+    });
+
+    frm.doc.grand_total = flt(total);
+    frm.doc.base_grand_total = flt(base_total);
+
+    frm.doc.rounded_total = Math.round(flt(total));
+    frm.doc.base_rounded_total = Math.round(flt(base_total));
+
+    frm.doc.rounding_adjustment = flt(
+        frm.doc.rounded_total - frm.doc.grand_total
+    );
+
+    if (frm.doc.doctype === "Purchase Invoice") {
+        frm.doc.outstanding_amount = flt(
+            frm.doc.rounded_total || frm.doc.grand_total
+        );
+        frm.refresh_field("outstanding_amount");
+    }
+
+    frm.refresh_field("taxes");
+    frm.refresh_field("grand_total");
+    frm.refresh_field("base_grand_total");
+    frm.refresh_field("rounded_total");
+    frm.refresh_field("base_rounded_total");
+    frm.refresh_field("rounding_adjustment");
 }
