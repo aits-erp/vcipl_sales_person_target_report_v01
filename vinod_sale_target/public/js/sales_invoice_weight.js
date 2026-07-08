@@ -185,6 +185,8 @@
 //     }
 // }
 
+
+
 const WBA_PARENT_DOCTYPES = [
     "Purchase Order", "Purchase Invoice", "Purchase Receipt",
     "Material Request", "Stock Entry", "Delivery Note",
@@ -237,6 +239,8 @@ function wba_calculate_row(frm, cdt, cdn) {
     if (!frm.doc.custom_use_weight_based_amount) return;
 
     let item = frappe.get_doc(cdt, cdn);
+    let original_qty = flt(item.qty);
+
     let weight = flt(item.custom_weight);
     let rate = flt(item.rate || item.basic_rate || 0);
 
@@ -247,37 +251,39 @@ function wba_calculate_row(frm, cdt, cdn) {
     let amount = flt(weight * rate, precision("amount", item) || 2);
     let conv = flt(frm.doc.conversion_rate || 1);
 
-    if (item.hasOwnProperty("qty")) {
-        frappe.model.set_value(cdt, cdn, "qty", weight);
-    }
-
     if (item.hasOwnProperty("amount")) {
-        frappe.model.set_value(cdt, cdn, "amount", amount);
+        item.amount = amount;
     }
 
     if (item.hasOwnProperty("net_amount")) {
-        frappe.model.set_value(cdt, cdn, "net_amount", amount);
+        item.net_amount = amount;
     }
 
     if (item.hasOwnProperty("basic_amount")) {
-        frappe.model.set_value(cdt, cdn, "basic_amount", amount);
+        item.basic_amount = amount;
     }
 
     if (item.hasOwnProperty("base_amount")) {
-        frappe.model.set_value(cdt, cdn, "base_amount", flt(amount * conv));
+        item.base_amount = flt(amount * conv, precision("base_amount", item) || 2);
     }
 
     if (item.hasOwnProperty("base_net_amount")) {
-        frappe.model.set_value(cdt, cdn, "base_net_amount", flt(amount * conv));
+        item.base_net_amount = flt(amount * conv, precision("base_net_amount", item) || 2);
     }
 
     if (item.hasOwnProperty("net_rate")) {
-        frappe.model.set_value(cdt, cdn, "net_rate", rate);
+        item.net_rate = rate;
     }
 
     if (item.hasOwnProperty("base_net_rate")) {
-        frappe.model.set_value(cdt, cdn, "base_net_rate", flt(rate * conv));
+        item.base_net_rate = flt(rate * conv);
     }
+
+    if (item.hasOwnProperty("qty")) {
+        item.qty = original_qty;
+    }
+
+    frm.refresh_field("items");
 
     setTimeout(() => {
         wba_run_calculations(frm);
@@ -310,57 +316,6 @@ function wba_run_calculations(frm) {
     frm.refresh_field("base_total");
 
     if (frm.cscript && typeof frm.cscript.calculate_taxes_and_totals === "function") {
-        frm.cscript.calculate_taxes_and_totals();
+        frm.cscript.calculate_taxes_and_totals(frm.doc);
     }
-
-    setTimeout(() => {
-        wba_fix_tax_totals(frm);
-    }, 300);
-}
-
-function wba_fix_tax_totals(frm) {
-    if (!frm.doc.custom_use_weight_based_amount) return;
-
-    let total = flt(frm.doc.net_total);
-    let base_total = flt(frm.doc.base_net_total || frm.doc.net_total);
-
-    (frm.doc.taxes || []).forEach(tax => {
-        let tax_amount = flt(tax.tax_amount);
-        let base_tax_amount = flt(tax.base_tax_amount || tax.tax_amount);
-
-        if (tax.add_deduct_tax === "Deduct") {
-            total -= tax_amount;
-            base_total -= base_tax_amount;
-        } else {
-            total += tax_amount;
-            base_total += base_tax_amount;
-        }
-
-        tax.total = flt(total);
-        tax.base_total = flt(base_total);
-    });
-
-    frm.doc.grand_total = flt(total);
-    frm.doc.base_grand_total = flt(base_total);
-
-    frm.doc.rounded_total = Math.round(flt(total));
-    frm.doc.base_rounded_total = Math.round(flt(base_total));
-
-    frm.doc.rounding_adjustment = flt(
-        frm.doc.rounded_total - frm.doc.grand_total
-    );
-
-    if (frm.doc.doctype === "Purchase Invoice") {
-        frm.doc.outstanding_amount = flt(
-            frm.doc.rounded_total || frm.doc.grand_total
-        );
-        frm.refresh_field("outstanding_amount");
-    }
-
-    frm.refresh_field("taxes");
-    frm.refresh_field("grand_total");
-    frm.refresh_field("base_grand_total");
-    frm.refresh_field("rounded_total");
-    frm.refresh_field("base_rounded_total");
-    frm.refresh_field("rounding_adjustment");
 }
