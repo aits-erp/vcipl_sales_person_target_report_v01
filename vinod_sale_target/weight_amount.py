@@ -166,7 +166,10 @@ def apply_weight_based_amount(doc, method=None):
     # Let ERPNext calculate taxes, grand total, rounded total correctly
     if hasattr(doc, "calculate_taxes_and_totals"):
         doc.calculate_taxes_and_totals()
+    force_weight_math(doc)
 
+    if hasattr(doc, "calculate_taxes_and_totals"):
+        doc.calculate_taxes_and_totals()    
 
 def force_weight_math(doc):
     for item in doc.get("items"):

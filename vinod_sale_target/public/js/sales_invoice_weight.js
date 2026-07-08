@@ -186,7 +186,6 @@
 // }
 
 
-
 const WBA_PARENT_DOCTYPES = [
     "Purchase Order", "Purchase Invoice", "Purchase Receipt",
     "Material Request", "Stock Entry", "Delivery Note",
@@ -249,6 +248,7 @@ function wba_calculate_row(frm, cdt, cdn) {
         }
 
         let conv = flt(frm.doc.conversion_rate || 1);
+
         if (item.hasOwnProperty("base_amount")) {
             frappe.model.set_value(cdt, cdn, "base_amount", flt(target_amount * conv, precision("base_amount", item)));
         }
@@ -264,6 +264,7 @@ function wba_run_calculations(frm) {
     if (!frm.doc.custom_use_weight_based_amount) return;
 
     let net_total = 0;
+
     (frm.doc.items || []).forEach(row => {
         net_total += flt(row.net_amount || row.amount || row.basic_amount || 0);
     });
@@ -272,16 +273,13 @@ function wba_run_calculations(frm) {
         frm.doc.net_total = net_total;
         frm.refresh_field("net_total");
     }
+
     if (frm.doc.hasOwnProperty("total")) {
         frm.doc.total = net_total;
         frm.refresh_field("total");
     }
 
     if (frm.cscript && typeof frm.cscript.calculate_taxes_and_totals === "function") {
-    frm.cscript.calculate_taxes_and_totals(frm.doc);
-
-    frm.refresh_field("grand_total");
-    frm.refresh_field("rounded_total");
-    frm.refresh_field("outstanding_amount");
+        frm.cscript.calculate_taxes_and_totals(frm.doc);
     }
-}   
+}
