@@ -398,58 +398,30 @@ DEFAULT_CATEGORIES = [
 # }
 
 SECTION_VIEW_MAP = {
+    "North Detail": ("parent_sales_person", ["Rajiv K Dutta"]),
+    "East Detail": ("parent_sales_person", ["Pannalal Bhattacharya"]),
+    "South Detail": ("parent_sales_person", ["Mohammed Muqeemudheen Cherayakkuth"]),
+    "West Detail": ("parent_sales_person", [
+        "Sandeep Kumar",
+        "Jaydeo Deshmukh",
+        "Muslim Abdulla Hakim (Aslam)",
+        "MAYUR TALATI"
+    ]),
 
-    # -------------------------------
-    # Region-wise
-    # -------------------------------
-    "North TSO Detail": (
-        "parent_sales_person",
-        ["Rajiv K Dutta"]
-    ),
+    "North TSO Detail": ("parent_sales_person", ["Rajiv K Dutta"]),
+    "East TSO Detail": ("parent_sales_person", ["Pannalal Bhattacharya"]),
+    "South TSO Detail": ("parent_sales_person", ["Mohammed Muqeemudheen Cherayakkuth"]),
+    "West TSO Detail": ("parent_sales_person", [
+        "Sandeep Kumar",
+        "Jaydeo Deshmukh",
+        "Muslim Abdulla Hakim (Aslam)",
+        "MAYUR TALATI"
+    ]),
 
-    "East TSO Detail": (
-        "parent_sales_person",
-        ["Pannalal Bhattacharya"]
-    ),
-
-    "South TSO Detail": (
-        "parent_sales_person",
-        ["Mohammed Muqeemudheen Cherayakkuth"]
-    ),
-
-    # West Region = Combination of 4 Head Sales Persons
-    "West TSO Detail": (
-        "parent_sales_person",
-        [
-            "Sandeep Kumar",                  # ROM
-            "Jaydeo Deshmukh",                # MPCG
-            "Muslim Abdulla Hakim (Aslam)",   # Mumbai AH
-            "MAYUR TALATI"                    # Gujarat
-        ]
-    ),
-
-    # -------------------------------
-    # Individual Sections
-    # -------------------------------
-    "ROM Detail": (
-        "parent_sales_person",
-        ["Sandeep Kumar"]
-    ),
-
-    "MPCG Detail": (
-        "parent_sales_person",
-        ["Jaydeo Deshmukh"]
-    ),
-
-    "Mumbai AH Detail": (
-        "parent_sales_person",
-        ["Muslim Abdulla Hakim (Aslam)"]
-    ),
-
-    "Gujarat Detail": (
-        "parent_sales_person",
-        ["MAYUR TALATI"]
-    ),
+    "ROM Detail": ("parent_sales_person", ["Sandeep Kumar"]),
+    "MPCG Detail": ("parent_sales_person", ["Jaydeo Deshmukh"]),
+    "Mumbai AH Detail": ("parent_sales_person", ["Muslim Abdulla Hakim (Aslam)"]),
+    "Gujarat Detail": ("parent_sales_person", ["MAYUR TALATI"]),
 }
 
 _target_cache = {}
@@ -506,8 +478,11 @@ def execute(filters=None):
         columns = get_columns(categories, filters)
         data = raw_data
 
-    summary = get_summary(raw_data, categories)
-    chart = get_chart(raw_data)
+    # summary = get_summary(raw_data, categories)
+    # chart = get_chart(raw_data)
+    
+    summary = get_summary(data, categories)
+    chart = get_chart(data)
 
     return columns, data, None, chart, summary
 
@@ -828,7 +803,7 @@ def get_summary(data, categories):
 
     return [
         {"label": _("Total Achieved"), "value": total_achieved, "indicator": "Green", "datatype": "Currency"},
-        {"label": _("Total Target"), "value": total_target, "indicator": "Blue", "datatype": "Currency"},
+        {"label": _("Total Target"), "value": total_target, "indicator": "Yellow", "datatype": "Currency"},
         {"label": _("Achievement %"), "value": ach_percent, "indicator": "Purple", "datatype": "Percent"},
         {"label": _("Invoice Count"), "value": total_invoice, "indicator": "Orange", "datatype": "Int"},
         {"label": _("Item Count"), "value": total_item, "indicator": "Grey", "datatype": "Int"},
