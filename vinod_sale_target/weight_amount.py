@@ -147,11 +147,13 @@ def apply_weight_based_amount(doc, method=None):
 
     if hasattr(doc, "calculate_taxes_and_totals"):
         doc.calculate_taxes_and_totals()
-
+        
+    force_weight_math(doc)
+    set_parent_totals(doc)
 
 def force_weight_math(doc):
     for item in doc.get("items", []):
-        weight = flt(item.get("custom_weight"))
+        weight = flt(item.get("custom_zzzzzzzzz weight"))
         rate = flt(item.get("rate") or item.get("basic_rate") or 0)
 
         if weight <= 0 or rate <= 0:

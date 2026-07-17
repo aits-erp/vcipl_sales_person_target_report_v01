@@ -1098,24 +1098,24 @@ def get_mis_dashboard_data(from_date=None, to_date=None):
         "East": lambda r: r.get("custom_region") == "East",
         "West": lambda r: r.get("custom_region") == "West",
 
-        "ROM": lambda r: r.get("custom_head_sales_code") == "HSROM",
+        # "ROM": lambda r: r.get("custom_head_sales_code") == "HSROM",
+        "ROM": lambda r: (r.get("parent_sales_person") or "").strip() == "Sandeep Kumar",
+        
+        # "Mumbai AH": lambda r:
+        #     r.get("custom_territory") in [
+        #         "TSOMUM1",
+        #         "TSOMUM2",
+        #         "TSOMUM3",
+        #         "TSOMUM4",
+        #         "TSOMUM5" 
+        #     ],
+        "Mumbai AH": lambda r: (r.get("parent_sales_person") or "").strip() == "Muslim Abdulla Hakim (Aslam)",
 
-        "Mumbai AH": lambda r:
-            r.get("custom_territory") in [
-                "TSOMUM1",
-                "TSOMUM2",
-                "TSOMUM3",
-                "TSOMUM4",
-                "TSOMUM5" 
-            ],
+        "Gujarat": lambda r: (r.get("tso_name") or "").strip() == "MAYUR TALATI",
 
-        "Gujarat": lambda r:
-            r.get("custom_territory") in [
-                "TSOSRT1"
-            ],
-
-        "MPCG": lambda r:
-            r.get("custom_head_sales_code") == "HSMPCG",
+        # "MPCG": lambda r:
+        #     r.get("custom_head_sales_code") == "HSMPCG",
+        "MPCG": lambda r: (r.get("parent_sales_person") or "").strip() == "Jaydeo Deshmukh" or (r.get("tso_name") or "").strip() == "Jaydeo Deshmukh",
     }
 
     area_summary = []

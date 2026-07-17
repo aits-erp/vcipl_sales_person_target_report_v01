@@ -176,6 +176,7 @@ frappe.query_reports["TEST REPORT"] = {
                 "West Detail",
                 "Mumbai AH Detail",
                 "ROM Detail",
+                "MPCG Detail",
                 "Gujarat Detail"
             ],
             default: "TSO Summary"
