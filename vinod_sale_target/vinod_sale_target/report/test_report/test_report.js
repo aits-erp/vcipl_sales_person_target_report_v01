@@ -173,7 +173,7 @@ frappe.query_reports["TEST REPORT"] = {
                 "North Detail",
                 "South Detail",
                 "East Detail",
-                "West Detail",
+                
                 "Mumbai AH Detail",
                 "ROM Detail",
                 "MPCG Detail",

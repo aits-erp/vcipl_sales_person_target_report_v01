@@ -857,22 +857,22 @@ SECTION_VIEW_MAP = {
     "North Detail": (["parent_sales_person"], ["Rajiv K Dutta"]),
     "East Detail": (["parent_sales_person"], ["Pannalal Bhattacharya"]),
     "South Detail": (["parent_sales_person"], ["Mohammed Muqeemudheen Cherayakkuth"]),
-    "West Detail": (["parent_sales_person", "tso_name"], [
-        "Sandeep Kumar",
-        "Jaydeo Deshmukh",
-        "Muslim Abdulla Hakim (Aslam)",
-        "MAYUR TALATI"
-    ]),
+    # "West Detail": (["parent_sales_person", "tso_name"], [
+    #     "Sandeep Kumar",
+    #     "Jaydeo Deshmukh",
+    #     "Muslim Abdulla Hakim (Aslam)",
+    #     "MAYUR TALATI"
+    # ]),
 
     "North TSO Detail": (["parent_sales_person"], ["Rajiv K Dutta"]),
     "East TSO Detail": (["parent_sales_person"], ["Pannalal Bhattacharya"]),
     "South TSO Detail": (["parent_sales_person"], ["Mohammed Muqeemudheen Cherayakkuth"]),
-    "West TSO Detail": (["parent_sales_person", "tso_name"], [
-        "Sandeep Kumar",
-        "Jaydeo Deshmukh",
-        "Muslim Abdulla Hakim (Aslam)",
-        "MAYUR TALATI"
-    ]),
+    # "West TSO Detail": (["parent_sales_person", "tso_name"], [
+    #     "Sandeep Kumar",
+    #     "Jaydeo Deshmukh",
+    #     "Muslim Abdulla Hakim (Aslam)",
+    #     "MAYUR TALATI"
+    # ]),
 
     "ROM Detail": (["parent_sales_person"], ["Sandeep Kumar"]),
     "MPCG Detail": (["parent_sales_person", "tso_name"], ["Jaydeo Deshmukh"]),
@@ -1561,7 +1561,7 @@ def get_mis_dashboard_data(from_date=None, to_date=None):
         "North": lambda r: r.get("custom_region") == "North",
         "South": lambda r: r.get("custom_region") == "South",
         "East": lambda r: r.get("custom_region") == "East",
-        "West": lambda r: r.get("custom_region") == "West",
+        # "West": lambda r: r.get("custom_region") == "West",
         "ROM": lambda r: row_matches_section(r, *AREA_FIELD_MAP["ROM"]),
         "Mumbai AH": lambda r: row_matches_section(r, *AREA_FIELD_MAP["Mumbai AH"]),
         "Gujarat": lambda r: row_matches_section(r, *AREA_FIELD_MAP["Gujarat"]),

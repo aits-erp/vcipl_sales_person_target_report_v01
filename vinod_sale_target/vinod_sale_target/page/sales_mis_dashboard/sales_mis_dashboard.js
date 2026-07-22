@@ -226,11 +226,9 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
                     South TSO Details
                     <small>South region detail</small>
                 </div>
-
-                <div class="mis-btn dark" data-view="West TSO Detail">
-                    West TSO Details
-                    <small>West region detail</small>
-                </div>
+                
+                
+            
 
                 <div class="mis-btn black" id="download-full-excel">
                     Download Full MIS Excel
