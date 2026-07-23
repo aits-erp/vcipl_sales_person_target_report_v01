@@ -1,3 +1,6 @@
+# # Copyright (c) 2026, Sukku and contributors
+# # For license information, please see license.txt
+
 # import io
 # import frappe
 # from frappe import _
@@ -35,32 +38,47 @@
 #     "Futuretec"
 # ]
 
+# # --------------------------------------------------------------------
+# # SECTION_VIEW_MAP
+# #
+# # Each entry: view_name -> (list_of_fields_to_check, list_of_values_to_match)
+# #
+# # A row belongs to the section if ANY of the listed fields, after
+# # trimming whitespace and ignoring case, equals ANY of the listed
+# # values (also trimmed/case-folded). Checking multiple fields matters
+# # because a TSO can appear as either the "tso_name" on a row, OR as
+# # the "parent_sales_person" (head) on someone else's row — depending
+# # on how the Sales Person master data is set up. Mayur Talati, for
+# # example, shows up as tso_name = "MAYUR TALATI" but his
+# # parent_sales_person is "Sales Team", not himself — so we must match
+# # on tso_name for him, while other heads are matched via
+# # parent_sales_person.
+# # --------------------------------------------------------------------
 # SECTION_VIEW_MAP = {
-#     "North Detail": ("parent_sales_person", ["Rajiv K Dutta"]),
-#     "East Detail": ("parent_sales_person", ["Pannalal Bhattacharya"]),
-#     "South Detail": ("parent_sales_person", ["Mohammed Muqeemudheen Cherayakkuth"]),
-#     "West Detail": ("parent_sales_person", [
-#         "Sandeep Kumar",
-#         "Jaydeo Deshmukh",
-#         "Muslim Abdulla Hakim (Aslam)",
-#         "MAYUR TALATI"
-#     ]),
+#     "North Detail": (["parent_sales_person"], ["Rajiv K Dutta"]),
+#     "East Detail": (["parent_sales_person"], ["Pannalal Bhattacharya"]),
+#     "South Detail": (["parent_sales_person"], ["Mohammed Muqeemudheen Cherayakkuth"]),
+#     # "West Detail": (["parent_sales_person", "tso_name"], [
+#     #     "Sandeep Kumar",
+#     #     "Jaydeo Deshmukh",
+#     #     "Muslim Abdulla Hakim (Aslam)",
+#     #     "MAYUR TALATI"
+#     # ]),
 
-#     "North TSO Detail": ("parent_sales_person", ["Rajiv K Dutta"]),
-#     "East TSO Detail": ("parent_sales_person", ["Pannalal Bhattacharya"]),
-#     "South TSO Detail": ("parent_sales_person", ["Mohammed Muqeemudheen Cherayakkuth"]),
-#     "West TSO Detail": ("parent_sales_person", [
-#         "Sandeep Kumar",
-#         "Jaydeo Deshmukh",
-#         "Muslim Abdulla Hakim (Aslam)",
-#         "MAYUR TALATI"
-#     ]),
+#     "North TSO Detail": (["parent_sales_person"], ["Rajiv K Dutta"]),
+#     "East TSO Detail": (["parent_sales_person"], ["Pannalal Bhattacharya"]),
+#     "South TSO Detail": (["parent_sales_person"], ["Mohammed Muqeemudheen Cherayakkuth"]),
+#     # "West TSO Detail": (["parent_sales_person", "tso_name"], [
+#     #     "Sandeep Kumar",
+#     #     "Jaydeo Deshmukh",
+#     #     "Muslim Abdulla Hakim (Aslam)",
+#     #     "MAYUR TALATI"
+#     # ]),
 
-#     "ROM Detail": ("parent_sales_person", ["Sandeep Kumar"]),
-#     "MPCG Detail": ("parent_sales_person", ["Jaydeo Deshmukh"]),
-#     "Mumbai AH Detail": ("parent_sales_person", ["Muslim Abdulla Hakim (Aslam)"]),
-#     # "Gujarat Detail": ("parent_sales_person", ["MAYUR TALATI"]),
-#     "Gujarat Detail": ("tso_name", ["MAYUR TALATI"]),
+#     "ROM Detail": (["parent_sales_person"], ["Sandeep Kumar"]),
+#     "MPCG Detail": (["parent_sales_person", "tso_name"], ["Jaydeo Deshmukh"]),
+#     "Mumbai AH Detail": (["parent_sales_person"], ["Muslim Abdulla Hakim (Aslam)"]),
+#     "Gujarat Detail": (["tso_name", "parent_sales_person"], ["MAYUR TALATI"]),
 # }
 
 # _target_cache = {}
@@ -68,6 +86,28 @@
 
 # def safe_field(category):
 #     return category.replace(" ", "_").replace("-", "_")
+
+
+# def normalize(value):
+#     """Trim whitespace and case-fold so 'MAYUR TALATI', ' Mayur Talati ',
+#     and 'mayur talati' are all treated as the same value."""
+#     return (value or "").strip().casefold()
+
+
+# def row_matches_section(row, fieldnames, selected_values):
+#     """True if any of `fieldnames` on `row` normalized-equals any of
+#     `selected_values`."""
+#     normalized_targets = {normalize(v) for v in selected_values}
+
+#     for fieldname in fieldnames:
+#         if normalize(row.get(fieldname)) in normalized_targets:
+#             return True
+
+#     return False
+
+
+# def filter_section_rows(rows, fieldnames, selected_values):
+#     return [r for r in rows if row_matches_section(r, fieldnames, selected_values)]
 
 
 # def execute(filters=None):
@@ -79,14 +119,6 @@
 
 #     categories = get_categories(filters)
 #     raw_data = get_data(filters, categories)
-#     if filters.get("view_type") == "Gujarat Detail":
-#     for row in raw_data:
-#         frappe.errprint({
-#             "TSO": row.get("tso_name"),
-#             "Parent": row.get("parent_sales_person"),
-#             "Territory": row.get("custom_territory"),
-#             "Region": row.get("custom_region")
-#         })
 
 #     view_type = filters.get("view_type") or "TSO Summary"
 
@@ -94,40 +126,25 @@
 #         columns = get_region_summary_columns()
 #         data = get_region_summary_data(raw_data)
 
-#     # elif view_type in SECTION_VIEW_MAP:
-#     #     fieldname, selected_value = SECTION_VIEW_MAP[view_type]
-#     #     columns = get_columns(categories, filters)
-
-#     #     if isinstance(selected_value, list):
-#     #         data = [
-#     #             row for row in raw_data
-#     #             if (row.get(fieldname) or "") in selected_value
-#     #         ]
-#     #     else:
-#     #         data = [
-#     #             row for row in raw_data
-#     #             if (row.get(fieldname) or "") == selected_value
-#     #         ]
-
 #     elif view_type in SECTION_VIEW_MAP:
-#         fieldname, selected_values = SECTION_VIEW_MAP[view_type]
+#         fieldnames, selected_values = SECTION_VIEW_MAP[view_type]
 #         columns = get_columns(categories, filters)
+#         data = filter_section_rows(raw_data, fieldnames, selected_values)
 
-#         if not isinstance(selected_values, list):
-#             selected_values = [selected_values]
-
-#         data = [
-#             row for row in raw_data
-#             if (row.get(fieldname) or "").strip() in selected_values
-#         ]
+#         if view_type == "Gujarat Detail":
+#             # Debug helper: if this ever comes back empty again, check
+#             # the actual tso_name / parent_sales_person values being
+#             # produced for Gujarat-related invoices.
+#             distinct_tso = sorted({(r.get("tso_name") or "") for r in raw_data
+#                                     if "mayur" in normalize(r.get("tso_name"))
+#                                     or "mayur" in normalize(r.get("parent_sales_person"))})
+#             frappe.errprint({"Gujarat Detail matched rows": len(data),
+#                               "candidate tso_name/parent values seen": distinct_tso})
 
 #     else:
 #         columns = get_columns(categories, filters)
 #         data = raw_data
 
-#     # summary = get_summary(raw_data, categories)
-#     # chart = get_chart(raw_data)
-    
 #     summary = get_summary(data, categories)
 #     chart = get_chart(data)
 
@@ -503,19 +520,10 @@
 #     add_region_chart(ws_chart)
 
 #     # Section-wise sheets like client workbook
-#     for sheet_name, (fieldname, selected_value) in SECTION_VIEW_MAP.items():
+#     for sheet_name, (fieldnames, selected_values) in SECTION_VIEW_MAP.items():
 #         clean_sheet_name = sheet_name.replace(" Detail", "")[:31]
 
-#         if isinstance(selected_value, list):
-#             section_rows = [
-#                 d for d in data
-#                 if (d.get(fieldname) or "") in selected_value
-#             ]
-#         else:
-#             section_rows = [
-#                 d for d in data
-#                 if (d.get(fieldname) or "") == selected_value
-#             ]
+#         section_rows = filter_section_rows(data, fieldnames, selected_values)
 
 #         if section_rows:
 #             ws_sec = wb.create_sheet(clean_sheet_name)
@@ -692,6 +700,7 @@
 
 #     ws.add_chart(chart, "G2")
 
+
 # @frappe.whitelist()
 # def get_mis_dashboard_data(from_date=None, to_date=None):
 #     filters = frappe._dict({
@@ -737,32 +746,27 @@
 
 #     # --------------------------
 #     # Area Summary
+#     #
+#     # Same normalized, dual-field matching as SECTION_VIEW_MAP so the
+#     # dashboard tiles stay consistent with the query report.
 #     # --------------------------
+
+#     AREA_FIELD_MAP = {
+#         "ROM": (["parent_sales_person"], ["Sandeep Kumar"]),
+#         "Mumbai AH": (["parent_sales_person"], ["Muslim Abdulla Hakim (Aslam)"]),
+#         "Gujarat": (["tso_name", "parent_sales_person"], ["MAYUR TALATI"]),
+#         "MPCG": (["parent_sales_person", "tso_name"], ["Jaydeo Deshmukh"]),
+#     }
 
 #     AREA_MAP = {
 #         "North": lambda r: r.get("custom_region") == "North",
 #         "South": lambda r: r.get("custom_region") == "South",
 #         "East": lambda r: r.get("custom_region") == "East",
-#         "West": lambda r: r.get("custom_region") == "West",
-
-#         # "ROM": lambda r: r.get("custom_head_sales_code") == "HSROM",
-#         "ROM": lambda r: (r.get("parent_sales_person") or "").strip() == "Sandeep Kumar",
-        
-#         # "Mumbai AH": lambda r:
-#         #     r.get("custom_territory") in [
-#         #         "TSOMUM1",
-#         #         "TSOMUM2",
-#         #         "TSOMUM3",
-#         #         "TSOMUM4",
-#         #         "TSOMUM5" 
-#         #     ],
-#         "Mumbai AH": lambda r: (r.get("parent_sales_person") or "").strip() == "Muslim Abdulla Hakim (Aslam)",
-
-#         "Gujarat": lambda r: (r.get("tso_name") or "").strip() == "MAYUR TALATI",
-
-#         # "MPCG": lambda r:
-#         #     r.get("custom_head_sales_code") == "HSMPCG",
-#         "MPCG": lambda r: (r.get("parent_sales_person") or "").strip() == "Jaydeo Deshmukh" or (r.get("tso_name") or "").strip() == "Jaydeo Deshmukh",
+#         # "West": lambda r: r.get("custom_region") == "West",
+#         "ROM": lambda r: row_matches_section(r, *AREA_FIELD_MAP["ROM"]),
+#         "Mumbai AH": lambda r: row_matches_section(r, *AREA_FIELD_MAP["Mumbai AH"]),
+#         "Gujarat": lambda r: row_matches_section(r, *AREA_FIELD_MAP["Gujarat"]),
+#         "MPCG": lambda r: row_matches_section(r, *AREA_FIELD_MAP["MPCG"]),
 #     }
 
 #     area_summary = []
@@ -793,7 +797,8 @@
 #         },
 #         "category_summary": category_summary,
 #         "area_summary": area_summary
-#     }   
+#     }
+
 
 
 
@@ -852,6 +857,13 @@ DEFAULT_CATEGORIES = [
 # parent_sales_person is "Sales Team", not himself — so we must match
 # on tso_name for him, while other heads are matched via
 # parent_sales_person.
+#
+# NOTE: "North Detail" / "North TSO Detail" (and the East/South
+# equivalents) intentionally share the same match criteria. Both
+# names are kept here because the query report's view_type filter and
+# the dashboard's report-navigation buttons both rely on the
+# "...TSO Detail" names existing. The Excel export below dedupes them
+# back down to a single sheet per region — see get_dedup_section_map().
 # --------------------------------------------------------------------
 SECTION_VIEW_MAP = {
     "North Detail": (["parent_sales_person"], ["Rajiv K Dutta"]),
@@ -907,6 +919,35 @@ def row_matches_section(row, fieldnames, selected_values):
 
 def filter_section_rows(rows, fieldnames, selected_values):
     return [r for r in rows if row_matches_section(r, fieldnames, selected_values)]
+
+
+def get_dedup_section_map():
+    """SECTION_VIEW_MAP intentionally has duplicate entries — e.g.
+    "North Detail" and "North TSO Detail" both match the exact same
+    rows (same fieldnames + same selected_values), because the report
+    filter and the dashboard buttons both need the "...TSO Detail"
+    names to exist. That's fine for filtering, but it means a naive
+    loop over SECTION_VIEW_MAP would generate two identical sheets
+    (e.g. "North" and "North TSO") in the Excel export.
+
+    This collapses those duplicates down to a single entry per unique
+    match criteria, keeping whichever name appears first in
+    SECTION_VIEW_MAP (i.e. "North Detail" wins over "North TSO
+    Detail"), so the workbook gets exactly one sheet per region.
+    """
+    seen_criteria = set()
+    result = {}
+
+    for sheet_name, (fieldnames, selected_values) in SECTION_VIEW_MAP.items():
+        criteria_key = (tuple(fieldnames), tuple(selected_values))
+
+        if criteria_key in seen_criteria:
+            continue
+
+        seen_criteria.add(criteria_key)
+        result[sheet_name] = (fieldnames, selected_values)
+
+    return result
 
 
 def execute(filters=None):
@@ -1318,8 +1359,10 @@ def download_mis_excel(**filters):
     make_region_summary_sheet(ws_chart, data)
     add_region_chart(ws_chart)
 
-    # Section-wise sheets like client workbook
-    for sheet_name, (fieldnames, selected_values) in SECTION_VIEW_MAP.items():
+    # Section-wise sheets like client workbook.
+    # Uses the deduped map so regions that are matched under two names
+    # (e.g. "North Detail" / "North TSO Detail") only produce ONE sheet.
+    for sheet_name, (fieldnames, selected_values) in get_dedup_section_map().items():
         clean_sheet_name = sheet_name.replace(" Detail", "")[:31]
 
         section_rows = filter_section_rows(data, fieldnames, selected_values)
