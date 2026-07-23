@@ -475,8 +475,6 @@
 // };
 
 
-
-
 frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
     let page = frappe.ui.make_app_page({
         parent: wrapper,
@@ -546,10 +544,13 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
     let from_date = dates.from_date;
     let to_date = dates.to_date;
 
-    // Build a list of selectable FYs: a couple of years back to a year ahead
+    // Build a list of selectable FYs: several years back to several years ahead.
+    // This is calculated from today's date every time the page loads, so the
+    // window itself shifts forward automatically each year — no manual update
+    // needed as years pass, as long as this range is generous enough.
     let this_calendar_year = new Date().getFullYear();
     let fy_options = [];
-    for (let y = this_calendar_year - 3; y <= this_calendar_year + 1; y++) {
+    for (let y = this_calendar_year - 5; y <= this_calendar_year + 5; y++) {
         fy_options.push(y);
     }
 
@@ -834,17 +835,17 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
                     <small>TSOSRT1</small>
                 </div>
 
-                <div class="mis-btn blue" data-view="North TSO Detail">
+                <div class="mis-btn blue" data-view="North Detail">
                     North TSO Details
                     <small>North region detail</small>
                 </div>
 
-                <div class="mis-btn teal" data-view="East TSO Detail">
+                <div class="mis-btn teal" data-view="East Detail">
                     East TSO Details
                     <small>East region detail</small>
                 </div>
 
-                <div class="mis-btn green" data-view="South TSO Detail">
+                <div class="mis-btn green" data-view="South Detail">
                     South TSO Details
                     <small>South region detail</small>
                 </div>

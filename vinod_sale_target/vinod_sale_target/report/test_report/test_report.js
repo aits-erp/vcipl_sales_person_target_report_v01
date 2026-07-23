@@ -326,7 +326,6 @@
 
 
 
-
 frappe.query_reports["TEST REPORT"] = {
     filters: [
         {
@@ -353,9 +352,6 @@ frappe.query_reports["TEST REPORT"] = {
                 "North Detail",
                 "South Detail",
                 "East Detail",
-                "North TSO Detail",
-                "South TSO Detail",
-                "East TSO Detail",
                 "Mumbai AH Detail",
                 "ROM Detail",
                 "MPCG Detail",

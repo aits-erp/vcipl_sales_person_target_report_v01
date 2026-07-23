@@ -804,6 +804,8 @@
 
 # Copyright (c) 2026, Sukku and contributors
 # For license information, please see license.txt
+# Copyright (c) 2026, Sukku and contributors
+# For license information, please see license.txt
 
 import io
 import frappe
@@ -858,28 +860,16 @@ DEFAULT_CATEGORIES = [
 # on tso_name for him, while other heads are matched via
 # parent_sales_person.
 #
-# NOTE: "North Detail" / "North TSO Detail" (and the East/South
-# equivalents) intentionally share the same match criteria. Both
-# names are kept here because the query report's view_type filter and
-# the dashboard's report-navigation buttons both rely on the
-# "...TSO Detail" names existing. The Excel export below dedupes them
-# back down to a single sheet per region — see get_dedup_section_map().
+# One entry per region only — this is the single source of truth used
+# by the report's view_type filter, the dashboard's report-navigation
+# buttons, AND the Excel export. Keeping it to one name per region
+# avoids duplicate dropdown options and duplicate Excel sheets.
 # --------------------------------------------------------------------
 SECTION_VIEW_MAP = {
     "North Detail": (["parent_sales_person"], ["Rajiv K Dutta"]),
     "East Detail": (["parent_sales_person"], ["Pannalal Bhattacharya"]),
     "South Detail": (["parent_sales_person"], ["Mohammed Muqeemudheen Cherayakkuth"]),
     # "West Detail": (["parent_sales_person", "tso_name"], [
-    #     "Sandeep Kumar",
-    #     "Jaydeo Deshmukh",
-    #     "Muslim Abdulla Hakim (Aslam)",
-    #     "MAYUR TALATI"
-    # ]),
-
-    "North TSO Detail": (["parent_sales_person"], ["Rajiv K Dutta"]),
-    "East TSO Detail": (["parent_sales_person"], ["Pannalal Bhattacharya"]),
-    "South TSO Detail": (["parent_sales_person"], ["Mohammed Muqeemudheen Cherayakkuth"]),
-    # "West TSO Detail": (["parent_sales_person", "tso_name"], [
     #     "Sandeep Kumar",
     #     "Jaydeo Deshmukh",
     #     "Muslim Abdulla Hakim (Aslam)",
@@ -919,35 +909,6 @@ def row_matches_section(row, fieldnames, selected_values):
 
 def filter_section_rows(rows, fieldnames, selected_values):
     return [r for r in rows if row_matches_section(r, fieldnames, selected_values)]
-
-
-def get_dedup_section_map():
-    """SECTION_VIEW_MAP intentionally has duplicate entries — e.g.
-    "North Detail" and "North TSO Detail" both match the exact same
-    rows (same fieldnames + same selected_values), because the report
-    filter and the dashboard buttons both need the "...TSO Detail"
-    names to exist. That's fine for filtering, but it means a naive
-    loop over SECTION_VIEW_MAP would generate two identical sheets
-    (e.g. "North" and "North TSO") in the Excel export.
-
-    This collapses those duplicates down to a single entry per unique
-    match criteria, keeping whichever name appears first in
-    SECTION_VIEW_MAP (i.e. "North Detail" wins over "North TSO
-    Detail"), so the workbook gets exactly one sheet per region.
-    """
-    seen_criteria = set()
-    result = {}
-
-    for sheet_name, (fieldnames, selected_values) in SECTION_VIEW_MAP.items():
-        criteria_key = (tuple(fieldnames), tuple(selected_values))
-
-        if criteria_key in seen_criteria:
-            continue
-
-        seen_criteria.add(criteria_key)
-        result[sheet_name] = (fieldnames, selected_values)
-
-    return result
 
 
 def execute(filters=None):
@@ -1359,10 +1320,8 @@ def download_mis_excel(**filters):
     make_region_summary_sheet(ws_chart, data)
     add_region_chart(ws_chart)
 
-    # Section-wise sheets like client workbook.
-    # Uses the deduped map so regions that are matched under two names
-    # (e.g. "North Detail" / "North TSO Detail") only produce ONE sheet.
-    for sheet_name, (fieldnames, selected_values) in get_dedup_section_map().items():
+    # Section-wise sheets like client workbook — one sheet per region.
+    for sheet_name, (fieldnames, selected_values) in SECTION_VIEW_MAP.items():
         clean_sheet_name = sheet_name.replace(" Detail", "")[:31]
 
         section_rows = filter_section_rows(data, fieldnames, selected_values)
