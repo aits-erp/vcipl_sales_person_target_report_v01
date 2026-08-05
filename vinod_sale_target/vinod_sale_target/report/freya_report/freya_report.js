@@ -19,6 +19,12 @@ frappe.query_reports["FREYA REPORT"] = {
             reqd: 1
         },
         {
+            fieldname: "custom_main_group",
+            label: "Main Group",
+            fieldtype: "Data",
+            default: "Freya Cast Iron"
+        },
+        {
             fieldname: "item_group",
             label: "Item Group",
             fieldtype: "Link",

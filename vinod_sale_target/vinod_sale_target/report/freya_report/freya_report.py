@@ -58,6 +58,14 @@ def get_pivot_data(filters):
         "to_date": filters.to_date
     }
 
+    # Main Group filter - trimmed + case-insensitive so stray spaces/casing
+    # in the data never silently produce a blank report again.
+    if filters.custom_main_group:
+        conditions += " AND LOWER(TRIM(i.custom_main_group))=LOWER(TRIM(%(custom_main_group)s))"
+        values["custom_main_group"] = filters.custom_main_group
+    else:
+        conditions += " AND LOWER(TRIM(i.custom_main_group))=LOWER(TRIM('Freya Cast Iron'))"
+
     if filters.customer:
         conditions += " AND si.customer=%(customer)s"
         values["customer"] = filters.customer
@@ -116,8 +124,6 @@ def get_pivot_data(filters):
 
             AND si.posting_date BETWEEN %(from_date)s AND %(to_date)s
 
-            AND i.custom_main_group='Freya'
-
             {conditions}
 
     """, values, as_dict=True)
@@ -153,7 +159,7 @@ def get_pivot_data(filters):
 
                 result[key]["popup_data"][sc] = {}
 
-        # accumulate amount instead of overwriting rate
+        # accumulate amount (cumulative total, not overwrite)
         result[key][cust] += flt(row.amount)
 
         items = result[key]["popup_data"][cust]
