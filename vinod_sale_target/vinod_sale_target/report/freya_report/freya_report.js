@@ -82,8 +82,7 @@ frappe.query_reports["FREYA REPORT"] = {
         <table class="table table-bordered">
             <tr>
                 <th>Item</th>
-                <th>Rate</th>
-                <th>Amount</th>
+                <th>Sales Amount</th>
             </tr>`;
 
         rows.forEach(r => {
@@ -95,7 +94,6 @@ frappe.query_reports["FREYA REPORT"] = {
             html += `
             <tr style="${bold}">
                 <td>${r.item_name}</td>
-                <td>${r.rate}</td>
                 <td>${format_currency(r.amount)}</td>
             </tr>`;
         });

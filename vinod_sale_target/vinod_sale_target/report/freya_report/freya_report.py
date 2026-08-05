@@ -1,9 +1,6 @@
 # Copyright (c) 2026, Sukku and contributors
 # For license information, please see license.txt
 
-# import frappe
-
-
 import frappe
 from frappe.utils import flt
 import json
@@ -23,31 +20,30 @@ def execute(filters=None):
 def get_columns(customers):
 
     columns = [
-        {"label":"Item Code","fieldname":"item_code","width":150},
-        {"label":"Item Name","fieldname":"item_name","width":180},
-        {"label":"Item Group","fieldname":"item_group","width":180},
-        {"label":"Main Group","fieldname":"custom_main_group","width":180},
-        {"label":"Sub Group","fieldname":"custom_sub_group","width":180},
+        {"label": "Item Code", "fieldname": "item_code", "width": 150},
+        {"label": "Item Name", "fieldname": "item_name", "width": 180},
+        {"label": "Item Group", "fieldname": "item_group", "width": 180},
+        {"label": "Main Group", "fieldname": "custom_main_group", "width": 180},
+        {"label": "Sub Group", "fieldname": "custom_sub_group", "width": 180},
     ]
 
     for customer in customers:
 
         columns.append({
-            "label":customer,
-            "fieldname":frappe.scrub(customer),
-            "fieldtype":"Float",
-            "precision":2,
-            "width":140
+            "label": customer,
+            "fieldname": frappe.scrub(customer),
+            "fieldtype": "Currency",
+            "width": 150
         })
 
     columns.append({
-        "fieldname":"popup_data",
-        "hidden":1
+        "fieldname": "popup_data",
+        "hidden": 1
     })
 
     columns.append({
-        "fieldname":"idx",
-        "hidden":1
+        "fieldname": "idx",
+        "hidden": 1
     })
 
     return columns
@@ -55,34 +51,34 @@ def get_columns(customers):
 
 def get_pivot_data(filters):
 
-    conditions=""
+    conditions = ""
 
-    values={
-        "from_date":filters.from_date,
-        "to_date":filters.to_date
+    values = {
+        "from_date": filters.from_date,
+        "to_date": filters.to_date
     }
 
     if filters.customer:
-        conditions+=" AND si.customer=%(customer)s"
-        values["customer"]=filters.customer
+        conditions += " AND si.customer=%(customer)s"
+        values["customer"] = filters.customer
 
     if filters.item_group:
-        conditions+=" AND i.item_group=%(item_group)s"
-        values["item_group"]=filters.item_group
+        conditions += " AND i.item_group=%(item_group)s"
+        values["item_group"] = filters.item_group
 
     if filters.custom_sub_group:
-        conditions+=" AND i.custom_sub_group=%(custom_sub_group)s"
-        values["custom_sub_group"]=filters.custom_sub_group
+        conditions += " AND i.custom_sub_group=%(custom_sub_group)s"
+        values["custom_sub_group"] = filters.custom_sub_group
 
     if filters.custom_item_type:
-        conditions+=" AND i.custom_item_type=%(custom_item_type)s"
-        values["custom_item_type"]=filters.custom_item_type
+        conditions += " AND i.custom_item_type=%(custom_item_type)s"
+        values["custom_item_type"] = filters.custom_item_type
 
     if filters.parent_sales_person:
-        conditions+=" AND sp.parent_sales_person=%(parent_sales_person)s"
-        values["parent_sales_person"]=filters.parent_sales_person
+        conditions += " AND sp.parent_sales_person=%(parent_sales_person)s"
+        values["parent_sales_person"] = filters.parent_sales_person
 
-    raw_data=frappe.db.sql(f"""
+    raw_data = frappe.db.sql(f"""
         SELECT
 
             sii.item_code,
@@ -94,7 +90,6 @@ def get_pivot_data(filters):
 
             c.customer_name,
 
-            sii.rate,
             sii.base_net_amount as amount
 
         FROM `tabSales Invoice` si
@@ -125,86 +120,79 @@ def get_pivot_data(filters):
 
             {conditions}
 
-    """,values,as_dict=True)
+    """, values, as_dict=True)
 
-    customers=sorted({d.customer_name for d in raw_data})
+    customers = sorted({d.customer_name for d in raw_data})
 
-    result={}
+    result = {}
 
     for row in raw_data:
 
-        key=f"{row.item_code}::{row.item_name}::{row.item_group}::{row.custom_main_group}::{row.custom_sub_group}"
+        key = f"{row.item_code}::{row.item_name}::{row.item_group}::{row.custom_main_group}::{row.custom_sub_group}"
 
-        cust=frappe.scrub(row.customer_name)
+        cust = frappe.scrub(row.customer_name)
 
         if key not in result:
 
-            result[key]={
+            result[key] = {
 
-                "item_code":row.item_code,
-                "item_name":row.item_name,
-                "item_group":row.item_group,
-                "custom_main_group":row.custom_main_group,
-                "custom_sub_group":row.custom_sub_group,
-                "popup_data":{}
+                "item_code": row.item_code,
+                "item_name": row.item_name,
+                "item_group": row.item_group,
+                "custom_main_group": row.custom_main_group,
+                "custom_sub_group": row.custom_sub_group,
+                "popup_data": {}
 
             }
 
             for c in customers:
 
-                sc=frappe.scrub(c)
+                sc = frappe.scrub(c)
 
-                result[key][sc]=0
+                result[key][sc] = 0
 
-                result[key]["popup_data"][sc]={}
+                result[key]["popup_data"][sc] = {}
 
-        result[key][cust]=flt(row.rate)
+        # accumulate amount instead of overwriting rate
+        result[key][cust] += flt(row.amount)
 
-        items=result[key]["popup_data"][cust]
+        items = result[key]["popup_data"][cust]
 
         if row.item_name not in items:
 
-            items[row.item_name]={
+            items[row.item_name] = {
 
-                "item_name":row.item_name,
-                "rate":0,
-                "amount":0
+                "item_name": row.item_name,
+                "amount": 0
 
             }
 
-        items[row.item_name]["rate"]=flt(row.rate)
-        items[row.item_name]["amount"]+=flt(row.amount)
+        items[row.item_name]["amount"] += flt(row.amount)
 
-    data=[]
+    data = []
 
     for record in result.values():
 
         for cust in record["popup_data"]:
 
-            lst=list(record["popup_data"][cust].values())
+            lst = list(record["popup_data"][cust].values())
 
-            avg_rate=0
-
-            if lst:
-                avg_rate=sum(i["rate"] for i in lst)/len(lst)
-
-            total_amount=sum(i["amount"] for i in lst)
+            total_amount = sum(i["amount"] for i in lst)
 
             lst.append({
 
-                "item_name":"Total",
-                "rate":round(avg_rate,2),
-                "amount":total_amount
+                "item_name": "Total",
+                "amount": total_amount
 
             })
 
-            record["popup_data"][cust]=lst
+            record["popup_data"][cust] = lst
 
-        record["popup_data"]=json.dumps(record["popup_data"])
+        record["popup_data"] = json.dumps(record["popup_data"])
 
         data.append(record)
 
-    for i,row in enumerate(data,1):
-        row["idx"]=i
+    for i, row in enumerate(data, 1):
+        row["idx"] = i
 
-    return data,customers
+    return data, customers
