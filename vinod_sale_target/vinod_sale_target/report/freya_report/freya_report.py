@@ -19,6 +19,9 @@ def get_columns(customers):
     columns = [
         {"label": "Item Code", "fieldname": "item_code", "fieldtype": "Data", "width": 150},
         {"label": "Item Name", "fieldname": "item_name", "fieldtype": "Data", "width": 200},
+        {"label": "Item Group", "fieldname": "item_group", "fieldtype": "Data", "width": 130},
+        {"label": "Main Group", "fieldname": "custom_main_group", "fieldtype": "Data", "width": 150},
+        {"label": "Sub Group", "fieldname": "custom_sub_group", "fieldtype": "Data", "width": 130},
     ]
 
     # ONE COLUMN PER CUSTOMER -> AMOUNT
@@ -59,15 +62,14 @@ def get_pivot_data(filters):
         conditions += " AND i.custom_item_type = %(custom_item_type)s"
         values["custom_item_type"] = filters.custom_item_type
 
-    if filters.parent_sales_person:
-        conditions += " AND sp.parent_sales_person = %(parent_sales_person)s"
-        values["parent_sales_person"] = filters.parent_sales_person
-
     raw_data = frappe.db.sql(
         f"""
         SELECT
             sii.item_code,
             sii.item_name,
+            i.item_group,
+            i.custom_main_group,
+            i.custom_sub_group,
             c.customer_name,
             sii.qty,
             sii.base_net_amount AS amount
@@ -75,11 +77,6 @@ def get_pivot_data(filters):
         JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
         JOIN `tabItem` i ON i.name = sii.item_code
         JOIN `tabCustomer` c ON c.name = si.customer
-        LEFT JOIN `tabSales Team` st
-            ON st.parent = si.name
-            AND st.parenttype = 'Sales Invoice'
-        LEFT JOIN `tabSales Person` sp
-            ON sp.name = st.sales_person
         WHERE si.docstatus = 1
           AND si.posting_date BETWEEN %(from_date)s AND %(to_date)s
           AND i.item_group = %(item_group)s
@@ -104,15 +101,21 @@ def get_pivot_data(filters):
 
         item_code = row.item_code or "Undefined"
         item_name = row.item_name or "Undefined"
+        item_group = row.item_group or "Undefined"
+        main_group = row.custom_main_group or "Undefined"
+        sub_group = row.custom_sub_group or "Undefined"
         customer = row.customer_name
 
-        key = f"{item_code}::{item_name}"
+        key = f"{item_code}::{item_name}::{item_group}::{main_group}::{sub_group}"
         cust_field = frappe.scrub(customer)
 
         if key not in result:
             result[key] = {
                 "item_code": item_code,
                 "item_name": item_name,
+                "item_group": item_group,
+                "custom_main_group": main_group,
+                "custom_sub_group": sub_group,
             }
             for c in customers:
                 result[key][frappe.scrub(c)] = 0

@@ -22,12 +22,6 @@ frappe.query_reports["FREYA REPORT"] = {
             options: "Customer"
         },
         {
-            fieldname: "parent_sales_person",
-            label: "Parent Sales Person",
-            fieldtype: "Link",
-            options: "Sales Person"
-        },
-        {
             fieldname: "custom_sub_group",
             label: "Sub Group",
             fieldtype: "Data"
