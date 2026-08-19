@@ -886,10 +886,15 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
                         <table class="mis-table" id="category-table"></table>
                     </div>
 
-                    <div class="panel">
+                    
+
+                    <%-- CHART 2 DISABLED --%>
+                   <!--
+                   <div class="panel">
                         <div class="panel-title">Chart 2 — Area-wise: Achieved vs Gap</div>
                         <table class="mis-table" id="area-table"></table>
                     </div>
+                    -->
 
                     <div class="panel">
                         <div class="panel-title">Gap Summary — Total Not Achieved by Area</div>

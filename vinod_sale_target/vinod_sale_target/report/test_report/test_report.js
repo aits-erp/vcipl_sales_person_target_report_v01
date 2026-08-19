@@ -312,7 +312,8 @@ frappe.query_reports["TEST REPORT"] = {
                 "Bottle",
                 "Csd",
                 "Other",
-                "Futuretec"
+                "Futuretec",
+                "Freya Cast Iron" 
             ],
             get_data: async function(txt) {
                 const rows = await frappe.db.get_list("Item", {
