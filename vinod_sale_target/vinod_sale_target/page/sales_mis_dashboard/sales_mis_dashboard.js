@@ -888,7 +888,6 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
 
                     
 
-                    <%-- CHART 2 DISABLED --%>
                    <!--
                    <div class="panel">
                         <div class="panel-title">Chart 2 — Area-wise: Achieved vs Gap</div>
