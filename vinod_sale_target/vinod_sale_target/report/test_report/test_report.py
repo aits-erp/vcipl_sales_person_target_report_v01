@@ -1126,8 +1126,7 @@ DEFAULT_CATEGORIES = [
     "Bottle",
     "Csd",
     "Other",
-    "Futuretec",
-    "Freya Cast Iron" 
+    "Futuretec"
 ]
 
 # --------------------------------------------------------------------
