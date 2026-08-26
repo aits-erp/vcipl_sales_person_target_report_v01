@@ -38,6 +38,9 @@ DEFAULT_CATEGORIES = [
     "Other",
     "Futuretec"
 ]
+DISPLAY_ONLY_CATEGORIES = [
+    "Freya Cast Iron",
+]
 
 # --------------------------------------------------------------------
 # SECTION_VIEW_MAP
@@ -229,6 +232,42 @@ def _load_targets_for_customer(customer, month_num):
 def get_target_for_customer_category(customer, month_num, category):
     targets = _load_targets_for_customer(customer, month_num)
     return flt(targets.get(category, 0))
+
+def get_display_only_category_totals(filters, category):
+    """
+    Achieved total for a DISPLAY_ONLY_CATEGORIES entry, computed
+    independently of get_achieved_data/get_data so it can never
+    affect total_achieved, total_target, KPI cards, or Region/Area
+    summaries. Target is intentionally left at 0 — gap is forced to
+    0 as well so the dashboard doesn't show a misleading negative gap
+    for a category that was never meant to have a target.
+    """
+    conditions = ["si.docstatus = 1", "i.custom_main_group = %(category)s"]
+    values = {"category": category}
+
+    if filters.get("from_date"):
+        conditions.append("si.posting_date >= %(from_date)s")
+        values["from_date"] = filters.get("from_date")
+
+    if filters.get("to_date"):
+        conditions.append("si.posting_date <= %(to_date)s")
+        values["to_date"] = filters.get("to_date")
+
+    if filters.get("customer_group"):
+        conditions.append("si.customer_group = %(customer_group)s")
+        values["customer_group"] = filters.get("customer_group")
+
+    where_clause = " AND ".join(conditions)
+
+    row = frappe.db.sql(f"""
+        SELECT COALESCE(SUM(sii.base_net_amount), 0) AS achieved
+        FROM `tabSales Invoice` si
+        INNER JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
+        INNER JOIN `tabItem` i ON i.name = sii.item_code
+        WHERE {where_clause}
+    """, values, as_dict=1)
+
+    return flt(row[0].achieved) if row else 0
 
 
 def parse_multi(value):
@@ -1169,6 +1208,15 @@ def get_mis_dashboard_data(from_date=None, to_date=None):
             "achieved": achieved,
             "gap": gap,
             "achievement": achieved / target * 100 if target else 0
+        })
+    for cat in DISPLAY_ONLY_CATEGORIES:
+        achieved = get_display_only_category_totals(filters, cat)
+        category_summary.append({
+            "category": cat,
+            "target": 0,
+            "achieved": achieved,
+            "gap": 0,
+            "achievement": 0
         })
 
     # --------------------------
