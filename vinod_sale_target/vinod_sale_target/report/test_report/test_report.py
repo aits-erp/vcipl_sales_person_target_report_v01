@@ -1215,7 +1215,6 @@ def get_mis_dashboard_data(from_date=None, to_date=None):
             "category": cat,
             "target": 0,
             "achieved": achieved,
-            "gap": 0,
             "achievement": 0
         })
 
