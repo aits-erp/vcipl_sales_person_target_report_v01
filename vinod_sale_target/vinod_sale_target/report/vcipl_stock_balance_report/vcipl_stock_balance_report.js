@@ -1,20 +1,17 @@
-// Copyright (c) 2026, Sukku and contributors
-// For license information, please see license.txt
-
-
 frappe.query_reports["VCIPL Stock Balance Report"] = {
 
     filters: [
         {
             fieldname: "custom_item_type",
             label: __("Item Type"),
-            fieldtype: "Data"
-            // no default — leave blank to show ALL items from Item Master
+            fieldtype: "Select",
+            options: ""
         },
         {
             fieldname: "custom_main_group",
             label: __("Main Group"),
-            fieldtype: "Data"
+            fieldtype: "Select",
+            options: ""
         },
         {
             fieldname: "item_group",
@@ -35,6 +32,26 @@ frappe.query_reports["VCIPL Stock Balance Report"] = {
             default: frappe.datetime.get_today()
         }
     ],
+
+    onload: function(report) {
+        frappe.call({
+            method: "vinod_sale_target.vinod_sale_target.report.vcipl_stock_balance_report.vcipl_stock_balance_report.get_item_type_options",
+            callback: function(r) {
+                let item_type_filter = report.get_filter("custom_item_type");
+                item_type_filter.df.options = r.message;
+                item_type_filter.refresh();
+            }
+        });
+
+        frappe.call({
+            method: "vinod_sale_target.vinod_sale_target.report.vcipl_stock_balance_report.vcipl_stock_balance_report.get_main_group_options",
+            callback: function(r) {
+                let main_group_filter = report.get_filter("custom_main_group");
+                main_group_filter.df.options = r.message;
+                main_group_filter.refresh();
+            }
+        });
+    },
 
     formatter: function(value, row, column, data, default_formatter) {
 

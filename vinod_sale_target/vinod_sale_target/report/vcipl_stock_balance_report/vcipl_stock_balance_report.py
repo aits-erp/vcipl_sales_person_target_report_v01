@@ -202,3 +202,17 @@ def get_data(item_type, item_group, main_group, warehouses):
         row["view_kbc"] = "View KBC"
 
     return rows
+
+    
+@frappe.whitelist()
+def get_item_type_options():
+    field = frappe.get_meta("Item").get_field("custom_item_type")
+    options = [o.strip() for o in (field.options or "").split("\n") if o.strip()]
+    return "\n" + "\n".join(options)
+
+
+@frappe.whitelist()
+def get_main_group_options():
+    field = frappe.get_meta("Item").get_field("custom_main_group")
+    options = [o.strip() for o in (field.options or "").split("\n") if o.strip()]
+    return "\n" + "\n".join(options)
