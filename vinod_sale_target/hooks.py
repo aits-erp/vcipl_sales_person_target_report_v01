@@ -5,6 +5,11 @@ app_description = "Created For report"
 app_email = "sukeshanee@gmail.com"
 app_license = "mit"
 
+
+app_include_js = [
+    "/assets/vinod_sale_target/js/ageing_customers.js"
+]
+
 doctype_js = {
     "Purchase Order": "public/js/sales_invoice_weight.js",
     "Purchase Invoice": "public/js/sales_invoice_weight.js",
