@@ -2,18 +2,18 @@
 (() => {
     const report_name = "Ageing - Customers";
 
-    function apply_current_date() {
-        const report_config = frappe.query_reports[report_name];
+    function set_current_date() {
+        const config = frappe.query_reports[report_name];
 
-        if (!report_config || report_config._current_date_applied) {
+        if (!config || config._current_date_hooked) {
             return;
         }
 
-        const original_onload = report_config.onload;
+        const original_onload = config.onload;
 
-        report_config.onload = function(report) {
+        config.onload = function(report) {
             if (original_onload) {
-                original_onload(report);
+                original_onload.apply(this, arguments);
             }
 
             report.set_filter_value(
@@ -22,8 +22,10 @@
             );
         };
 
-        report_config._current_date_applied = true;
+        config._current_date_hooked = true;
     }
 
-    apply_current_date();
+    // Attach after the report configuration becomes available.
+    frappe.router.on("change", set_current_date);
+    set_current_date();
 })();
