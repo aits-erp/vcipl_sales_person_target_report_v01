@@ -1008,6 +1008,21 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
                 font-size: 12px; color: #64748b; font-weight: 600; margin-left: auto;
             }
 
+            .month-bar {
+                display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+                padding: 10px 16px; background: #f8fafc; border-radius: 10px;
+                border: 1px solid #e2e8f0; margin-top: 4px; width: 100%;
+            }
+            .month-bar label { font-weight: 700; color: #0b3d5c; font-size: 13px; }
+            .month-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+            .month-btn {
+                padding: 5px 12px; border-radius: 8px; border: 1px solid #0f766e;
+                background: white; color: #0f766e; font-weight: 700; cursor: pointer;
+                font-size: 12px; transition: all .15s ease;
+            }
+            .month-btn:hover { background: #e6f4f1; }
+            .month-btn.active { background: #0f766e; color: white; }
+
             .mis-section-title {
                 font-size: 16px; font-weight: 800; color: #0b3d5c; margin: 18px 0 10px;
             }
@@ -1126,6 +1141,10 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
                           style="font-size:11px;color:#0f766e;font-weight:700;display:none;">
                         ✓ Custom range active
                     </span>
+                </div>
+                 <div class="month-bar">
+                    <label>Month:</label>
+                    <div class="month-btns" id="month-btns"></div>
                 </div>
             </div>
 
@@ -1292,6 +1311,81 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
     // --------------------------------------------------------------
     // Quarter switcher wiring
     // --------------------------------------------------------------
+    // let $fy_select = $(page.body).find("#fy-select");
+
+    // fy_options.forEach(y => {
+    //     $fy_select.append(
+    //         `<option value="${y}">FY ${y}-${String(y + 1).slice(-2)}</option>`
+    //     );
+    // });
+    // $fy_select.val(selected_fy_start_year);
+
+    // function update_quarter_ui() {
+    //     $(page.body).find(".quarter-btn").removeClass("active");
+    //     $(page.body).find(`.quarter-btn[data-q="${selected_quarter}"]`).addClass("active");
+    //     let label = quarter_label(selected_quarter, selected_fy_start_year);
+    //     $("#header-quarter-label").text(label);
+    //     $("#quarter-range-label").text(
+    //         frappe.datetime.str_to_user(from_date) + "  to  " + frappe.datetime.str_to_user(to_date)
+    //     );
+    //     $(page.body).find("#custom-range-active-label").hide();
+    // }
+
+    // function apply_quarter_change() {
+    //     let d = get_fy_quarter_dates(selected_quarter, selected_fy_start_year);
+    //     from_date = d.from_date;
+    //     to_date   = d.to_date;
+    //     $(page.body).find("#custom-from-date").val(from_date);
+    //     $(page.body).find("#custom-to-date").val(to_date);
+    //     update_quarter_ui();
+    //     load_dashboard_data();
+    // }
+
+    // $(page.body).find(".quarter-btn").on("click", function() {
+    //     selected_quarter = parseInt($(this).data("q"));
+    //     apply_quarter_change();
+    // });
+
+    // $fy_select.on("change", function() {
+    //     selected_fy_start_year = parseInt($(this).val());
+    //     apply_quarter_change();
+    // });
+
+    // // Custom date range
+    // $(page.body).find("#custom-from-date").val(from_date);
+    // $(page.body).find("#custom-to-date").val(to_date);
+
+    // $(page.body).find("#apply-custom-range").on("click", function() {
+    //     let f = $(page.body).find("#custom-from-date").val();
+    //     let t = $(page.body).find("#custom-to-date").val();
+    //     if (!f || !t) { frappe.msgprint("Please select both From and To dates."); return; }
+    //     if (f > t)    { frappe.msgprint("From date cannot be after To date."); return; }
+    //     $(page.body).find(".quarter-btn").removeClass("active");
+    //     selected_quarter = null;
+    //     from_date = f;
+    //     to_date   = t;
+    //     $("#header-quarter-label").text("Custom Range");
+    //     $("#quarter-range-label").text(
+    //         frappe.datetime.str_to_user(from_date) + "  to  " + frappe.datetime.str_to_user(to_date)
+    //     );
+    //     $(page.body).find("#custom-range-active-label").show();
+    //     load_dashboard_data();
+    // });
+
+    // update_quarter_ui();
+
+        const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun",
+                         "Jul","Aug","Sep","Oct","Nov","Dec"];
+    let selected_month = null;
+
+    function get_month_dates(month, fy_start_year) {
+        // Apr-Dec belong to fy_start_year, Jan-Mar belong to fy_start_year + 1
+        let year  = month >= 4 ? fy_start_year : fy_start_year + 1;
+        let start = new Date(year, month - 1, 1);
+        let end   = new Date(year, month, 0);
+        return { from_date: fmt_date(start), to_date: fmt_date(end), year: year };
+    }
+
     let $fy_select = $(page.body).find("#fy-select");
 
     fy_options.forEach(y => {
@@ -1301,10 +1395,24 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
     });
     $fy_select.val(selected_fy_start_year);
 
+    let $month_btns = $(page.body).find("#month-btns");
+    MONTH_NAMES.forEach(function(name, i) {
+        $month_btns.append(`<div class="month-btn" data-m="${i + 1}">${name}</div>`);
+    });
+
     function update_quarter_ui() {
-        $(page.body).find(".quarter-btn").removeClass("active");
-        $(page.body).find(`.quarter-btn[data-q="${selected_quarter}"]`).addClass("active");
-        let label = quarter_label(selected_quarter, selected_fy_start_year);
+        $(page.body).find(".quarter-btn, .month-btn").removeClass("active");
+        let label;
+
+        if (selected_month) {
+            $(page.body).find(`.month-btn[data-m="${selected_month}"]`).addClass("active");
+            let d = get_month_dates(selected_month, selected_fy_start_year);
+            label = MONTH_NAMES[selected_month - 1] + "-" + d.year;
+        } else {
+            $(page.body).find(`.quarter-btn[data-q="${selected_quarter}"]`).addClass("active");
+            label = quarter_label(selected_quarter, selected_fy_start_year);
+        }
+
         $("#header-quarter-label").text(label);
         $("#quarter-range-label").text(
             frappe.datetime.str_to_user(from_date) + "  to  " + frappe.datetime.str_to_user(to_date)
@@ -1322,14 +1430,36 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
         load_dashboard_data();
     }
 
+    function apply_month_change() {
+        let d = get_month_dates(selected_month, selected_fy_start_year);
+        from_date = d.from_date;
+        to_date   = d.to_date;
+        $(page.body).find("#custom-from-date").val(from_date);
+        $(page.body).find("#custom-to-date").val(to_date);
+        update_quarter_ui();
+        load_dashboard_data();
+    }
+
     $(page.body).find(".quarter-btn").on("click", function() {
         selected_quarter = parseInt($(this).data("q"));
+        selected_month   = null;
         apply_quarter_change();
+    });
+
+    $(page.body).find(".month-btn").on("click", function() {
+        selected_month   = parseInt($(this).data("m"));
+        selected_quarter = null;
+        apply_month_change();
     });
 
     $fy_select.on("change", function() {
         selected_fy_start_year = parseInt($(this).val());
-        apply_quarter_change();
+        if (selected_month) {
+            apply_month_change();
+        } else {
+            if (!selected_quarter) selected_quarter = 1;
+            apply_quarter_change();
+        }
     });
 
     // Custom date range
@@ -1341,8 +1471,9 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
         let t = $(page.body).find("#custom-to-date").val();
         if (!f || !t) { frappe.msgprint("Please select both From and To dates."); return; }
         if (f > t)    { frappe.msgprint("From date cannot be after To date."); return; }
-        $(page.body).find(".quarter-btn").removeClass("active");
+        $(page.body).find(".quarter-btn, .month-btn").removeClass("active");
         selected_quarter = null;
+        selected_month   = null;
         from_date = f;
         to_date   = t;
         $("#header-quarter-label").text("Custom Range");

@@ -168,7 +168,7 @@ frappe.query_reports["TEST REPORT"] = {
             fieldname: "party_wise_total",
             label: "Total (Party-wise Grouped Excel)",
             fieldtype: "Check",
-            default: 0
+            default: 1
         }
     ],
 

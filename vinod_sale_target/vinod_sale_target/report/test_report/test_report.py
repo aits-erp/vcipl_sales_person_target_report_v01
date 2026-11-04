@@ -1384,10 +1384,12 @@ def execute(filters=None):
         columns = get_columns(categories, filters)
         data    = raw_data
 
-    summary = get_summary(data, categories)
-    chart   = get_chart(data)
+    # summary = get_summary(data, categories)
+    # chart   = get_chart(data)
 
-    return columns, data, None, chart, summary
+    # return columns, data, None, chart, summary
+
+    return columns, data
 
 
 def get_categories(filters):
@@ -1489,9 +1491,13 @@ def get_display_only_category_totals(filters, category):
         conditions.append("si.posting_date <= %(to_date)s")
         values["to_date"] = filters.get("to_date")
 
+    # if filters.get("customer_group"):
+    #     conditions.append("si.customer_group = %(customer_group)s")
+    #     values["customer_group"] = filters.get("customer_group")
+
     if filters.get("customer_group"):
-        conditions.append("si.customer_group = %(customer_group)s")
-        values["customer_group"] = filters.get("customer_group")
+        conditions.append("si.customer_group IN %(customer_group)s")
+        values["customer_group"] = tuple(get_customer_group_list(filters.get("customer_group")))
 
     where_clause = " AND ".join(conditions)
 
@@ -1513,6 +1519,28 @@ def parse_multi(value):
         return value
     return [x.strip() for x in str(value).split(",") if x.strip()]
 
+def parse_multi(value):
+    if not value:
+        return []
+    if isinstance(value, list):
+        return value
+    return [x.strip() for x in str(value).split(",") if x.strip()]
+
+
+def get_customer_group_list(customer_group):
+    """Selected group + every child group under it (Customer Group is a tree)."""
+    if not customer_group:
+        return []
+    vals = frappe.db.get_value("Customer Group", customer_group, ["lft", "rgt"])
+    if not vals:
+        return [customer_group]
+    lft, rgt = vals
+    names = frappe.get_all(
+        "Customer Group",
+        filters={"lft": [">=", lft], "rgt": ["<=", rgt]},
+        pluck="name"
+    )
+    return names or [customer_group]
 
 def get_achieved_data(filters, categories):
     global _target_cache
@@ -1543,9 +1571,13 @@ def get_achieved_data(filters, categories):
         conditions.append("si.customer = %(customer)s")
         values["customer"] = filters.get("customer")
 
+    # if filters.get("customer_group"):
+    #     conditions.append("si.customer_group = %(customer_group)s")
+    #     values["customer_group"] = filters.get("customer_group")
+
     if filters.get("customer_group"):
-        conditions.append("si.customer_group = %(customer_group)s")
-        values["customer_group"] = filters.get("customer_group")
+        conditions.append("si.customer_group IN %(customer_group)s")
+        values["customer_group"] = tuple(get_customer_group_list(filters.get("customer_group")))
 
     # ✅ CHANGED: region uses sp_cust only
     regions = parse_multi(filters.get("custom_region"))
@@ -1642,6 +1674,7 @@ def get_achieved_data(filters, categories):
 
     rows   = frappe.db.sql(query, values, as_dict=1)
     result = {}
+    count_all_achieved = (filters.get("customer_group") or "") != "Debtors Distributors"
 
     for row in rows:
         tso      = row.tso_name or "Unassigned"
@@ -1693,7 +1726,9 @@ def get_achieved_data(filters, categories):
 
             result[key][f"{safe}_achieved"] += category_achieved
 
-            if category_target > 0:
+            # if category_target > 0:
+            if category_target > 0 or count_all_achieved:
+
                 result[key]["total_achieved"] += category_achieved
                 result[key]["invoice_count"]  += int(row.invoice_count or 0)
                 result[key]["item_count"]     += int(row.item_count or 0)
@@ -1730,9 +1765,12 @@ def get_target_skeleton_rows(filters, categories, month_year_list):
         conditions.append("spt.name = %(customer)s")
         values["customer"] = filters.get("customer")
 
+    # if filters.get("customer_group"):
+    #     conditions.append("c.customer_group = %(customer_group)s")
+    #     values["customer_group"] = filters.get("customer_group")
     if filters.get("customer_group"):
-        conditions.append("c.customer_group = %(customer_group)s")
-        values["customer_group"] = filters.get("customer_group")
+        conditions.append("c.customer_group IN %(customer_group)s")
+        values["customer_group"] = tuple(get_customer_group_list(filters.get("customer_group")))
 
     regions = parse_multi(filters.get("custom_region"))
     if regions:
