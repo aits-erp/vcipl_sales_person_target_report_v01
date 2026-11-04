@@ -2110,6 +2110,109 @@ def download_mis_excel(**filters):
     frappe.local.response.type        = "download"
 
 
+# def make_tso_summary_sheet(ws, data, categories,
+#                             sheet_label="TSO Target vs Achievement",
+#                             period_label=None):
+#     dark_green  = "0B6A57"
+#     yellow      = "FFF2CC"
+#     blue        = "DDEBF7"
+#     total_fill  = "D9EAD3"
+#     period_fill = "E8F5F1"
+
+#     thin   = Side(style="thin", color="999999")
+#     border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+#     headers = ["Region", "TSO", "Distributor"]
+#     for cat in categories:
+#         headers.append(f"{cat} Target")
+#         headers.append(f"{cat} Achieved")
+#     headers += ["Total Target", "Total Achieved", "Achievement %"]
+
+#     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
+#     title = ws.cell(1, 1)
+#     title.value     = f"Vinod Cookware — {sheet_label}"
+#     title.font      = Font(bold=True, color="FFFFFF", size=12)
+#     title.fill      = PatternFill("solid", fgColor=dark_green)
+#     title.alignment = Alignment(horizontal="center")
+
+#     ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=len(headers))
+#     period_cell       = ws.cell(2, 1)
+#     period_cell.value = f"Period: {period_label}" if period_label else "Period: All Data"
+#     period_cell.font  = Font(bold=True, color="0B3D5C", size=10)
+#     period_cell.fill  = PatternFill("solid", fgColor=period_fill)
+#     period_cell.alignment = Alignment(horizontal="center")
+
+#     header_row = 3
+#     for col, h in enumerate(headers, 1):
+#         cell           = ws.cell(header_row, col)
+#         cell.value     = h
+#         cell.font      = Font(bold=True, color="FFFFFF")
+#         cell.fill      = PatternFill("solid", fgColor=dark_green)
+#         cell.border    = border
+#         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+#     row_no = header_row + 1
+#     for row in data:
+#         values = [row.get("custom_region"), row.get("tso_name"), row.get("customer_name")]
+#         for cat in categories:
+#             safe = safe_field(cat)
+#             values.append(flt(row.get(f"{safe}_target")))
+#             values.append(flt(row.get(f"{safe}_achieved")))
+
+#         total_target   = flt(row.get("total_target"))
+#         total_achieved = flt(row.get("total_achieved"))
+#         ach_percent    = total_achieved / total_target if total_target else 0
+#         values        += [total_target, total_achieved, ach_percent]
+
+#         for col, value in enumerate(values, 1):
+#             cell           = ws.cell(row_no, col)
+#             cell.value     = value
+#             cell.border    = border
+#             cell.alignment = Alignment(vertical="center", wrap_text=True)
+#             if col > 3:
+#                 cell.number_format = '#,##0.00'
+#             if 4 <= col <= len(headers) - 3:
+#                 if (col - 4) % 2 == 0:
+#                     cell.fill = PatternFill("solid", fgColor=yellow)
+#                 else:
+#                     cell.fill = PatternFill("solid", fgColor=blue)
+#             if col == len(headers):
+#                 cell.number_format = "0.00%"
+
+#         row_no += 1
+
+#     total_row = row_no
+#     ws.cell(total_row, 1).value = "Grand Total"
+#     ws.cell(total_row, 1).font  = Font(bold=True)
+
+#     for col in range(4, len(headers)):
+#         letter      = get_column_letter(col)
+#         cell        = ws.cell(total_row, col)
+#         cell.value  = f"=SUM({letter}{header_row+1}:{letter}{total_row-1})"
+#         cell.font   = Font(bold=True)
+#         cell.fill   = PatternFill("solid", fgColor=total_fill)
+#         cell.border = border
+#         cell.number_format = '#,##0.00'
+
+#     ach_cell          = ws.cell(total_row, len(headers))
+#     total_target_col  = get_column_letter(len(headers) - 2)
+#     total_ach_col     = get_column_letter(len(headers) - 1)
+#     ach_cell.value    = f"={total_ach_col}{total_row}/{total_target_col}{total_row}"
+#     ach_cell.font     = Font(bold=True)
+#     ach_cell.fill     = PatternFill("solid", fgColor=total_fill)
+#     ach_cell.border   = border
+#     ach_cell.number_format = "0.00%"
+
+#     ws.freeze_panes = f"D{header_row+1}"
+#     ws.auto_filter.ref = ws.dimensions
+#     ws.column_dimensions["A"].width = 14
+#     ws.column_dimensions["B"].width = 24
+#     ws.column_dimensions["C"].width = 35
+#     for col in range(4, len(headers) + 1):
+#         ws.column_dimensions[get_column_letter(col)].width = 14
+
+
+
 def make_tso_summary_sheet(ws, data, categories,
                             sheet_label="TSO Target vs Achievement",
                             period_label=None):
@@ -2127,15 +2230,16 @@ def make_tso_summary_sheet(ws, data, categories,
         headers.append(f"{cat} Target")
         headers.append(f"{cat} Achieved")
     headers += ["Total Target", "Total Achieved", "Achievement %"]
+    ncols = len(headers)
 
-    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ncols)
     title = ws.cell(1, 1)
     title.value     = f"Vinod Cookware — {sheet_label}"
     title.font      = Font(bold=True, color="FFFFFF", size=12)
     title.fill      = PatternFill("solid", fgColor=dark_green)
     title.alignment = Alignment(horizontal="center")
 
-    ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=len(headers))
+    ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=ncols)
     period_cell       = ws.cell(2, 1)
     period_cell.value = f"Period: {period_label}" if period_label else "Period: All Data"
     period_cell.font  = Font(bold=True, color="0B3D5C", size=10)
@@ -2151,9 +2255,51 @@ def make_tso_summary_sheet(ws, data, categories,
         cell.border    = border
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
-    row_no = header_row + 1
+    # ---- NEW: sort so each TSO's customers sit together ----
+    data = sorted(data, key=lambda r: (
+        (r.get("custom_region") or ""),
+        (r.get("tso_name") or ""),
+        (r.get("customer_name") or "")
+    ))
+
+    tt_col = get_column_letter(ncols - 2)   # Total Target column letter
+    ta_col = get_column_letter(ncols - 1)   # Total Achieved column letter
+
+    # ---- NEW: writes one "TOTAL — <TSO>" row ----
+    def write_tso_total(r, tso, region, start, end):
+        ws.cell(r, 1).value = region
+        ws.cell(r, 2).value = tso
+        ws.cell(r, 3).value = f"TOTAL — {tso}"
+        for col in range(4, ncols):
+            L = get_column_letter(col)
+            ws.cell(r, col).value = f"=SUM({L}{start}:{L}{end})"
+        ws.cell(r, ncols).value = f"=IF({tt_col}{r}=0,0,{ta_col}{r}/{tt_col}{r})"
+        for col in range(1, ncols + 1):
+            c = ws.cell(r, col)
+            c.font   = Font(bold=True)
+            c.fill   = PatternFill("solid", fgColor=total_fill)
+            c.border = border
+            if col > 3:
+                c.number_format = "0.00%" if col == ncols else '#,##0.00'
+
+    row_no         = header_row + 1
+    block_start    = row_no
+    current_tso    = None
+    current_region = None
+
     for row in data:
-        values = [row.get("custom_region"), row.get("tso_name"), row.get("customer_name")]
+        tso = row.get("tso_name")
+
+        # TSO changed -> close the previous TSO with a total row
+        if current_tso is not None and tso != current_tso:
+            write_tso_total(row_no, current_tso, current_region, block_start, row_no - 1)
+            row_no += 1
+            block_start = row_no
+
+        current_tso    = tso
+        current_region = row.get("custom_region")
+
+        values = [row.get("custom_region"), tso, row.get("customer_name")]
         for cat in categories:
             safe = safe_field(cat)
             values.append(flt(row.get(f"{safe}_target")))
@@ -2171,44 +2317,43 @@ def make_tso_summary_sheet(ws, data, categories,
             cell.alignment = Alignment(vertical="center", wrap_text=True)
             if col > 3:
                 cell.number_format = '#,##0.00'
-            if 4 <= col <= len(headers) - 3:
-                if (col - 4) % 2 == 0:
-                    cell.fill = PatternFill("solid", fgColor=yellow)
-                else:
-                    cell.fill = PatternFill("solid", fgColor=blue)
-            if col == len(headers):
+            if 4 <= col <= ncols - 3:
+                cell.fill = PatternFill("solid", fgColor=yellow if (col - 4) % 2 == 0 else blue)
+            if col == ncols:
                 cell.number_format = "0.00%"
 
         row_no += 1
 
+    # ---- NEW: close the last TSO ----
+    if current_tso is not None:
+        write_tso_total(row_no, current_tso, current_region, block_start, row_no - 1)
+        row_no += 1
+
+    # ---- CHANGED: Grand Total adds only the TSO TOTAL rows (no double counting) ----
     total_row = row_no
+    last_data = total_row - 1
     ws.cell(total_row, 1).value = "Grand Total"
-    ws.cell(total_row, 1).font  = Font(bold=True)
-
-    for col in range(4, len(headers)):
-        letter      = get_column_letter(col)
-        cell        = ws.cell(total_row, col)
-        cell.value  = f"=SUM({letter}{header_row+1}:{letter}{total_row-1})"
-        cell.font   = Font(bold=True)
-        cell.fill   = PatternFill("solid", fgColor=total_fill)
-        cell.border = border
-        cell.number_format = '#,##0.00'
-
-    ach_cell          = ws.cell(total_row, len(headers))
-    total_target_col  = get_column_letter(len(headers) - 2)
-    total_ach_col     = get_column_letter(len(headers) - 1)
-    ach_cell.value    = f"={total_ach_col}{total_row}/{total_target_col}{total_row}"
-    ach_cell.font     = Font(bold=True)
-    ach_cell.fill     = PatternFill("solid", fgColor=total_fill)
-    ach_cell.border   = border
-    ach_cell.number_format = "0.00%"
+    for col in range(4, ncols):
+        L = get_column_letter(col)
+        ws.cell(total_row, col).value = (
+            f'=SUMIF($C${header_row+1}:$C${last_data},"TOTAL*",{L}{header_row+1}:{L}{last_data})'
+        )
+    ws.cell(total_row, ncols).value = f"=IF({tt_col}{total_row}=0,0,{ta_col}{total_row}/{tt_col}{total_row})"
+    for col in range(1, ncols + 1):
+        c = ws.cell(total_row, col)
+        c.font   = Font(bold=True)
+        c.fill   = PatternFill("solid", fgColor="B6D7A8")
+        c.border = border
+        if col > 3:
+            c.number_format = "0.00%" if col == ncols else '#,##0.00'
 
     ws.freeze_panes = f"D{header_row+1}"
-    ws.auto_filter.ref = ws.dimensions
+    # CHANGED: filter only on the header row (not on the title rows)
+    ws.auto_filter.ref = f"A{header_row}:{get_column_letter(ncols)}{total_row-1}"
     ws.column_dimensions["A"].width = 14
     ws.column_dimensions["B"].width = 24
     ws.column_dimensions["C"].width = 35
-    for col in range(4, len(headers) + 1):
+    for col in range(4, ncols + 1):
         ws.column_dimensions[get_column_letter(col)].width = 14
 
 
