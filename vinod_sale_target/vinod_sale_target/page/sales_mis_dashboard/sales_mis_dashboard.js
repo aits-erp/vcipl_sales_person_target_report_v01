@@ -953,6 +953,8 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
                 color: white; padding: 18px 22px; border-radius: 12px;
                 font-size: 22px; font-weight: 800; margin-bottom: 14px;
                 box-shadow: 0 6px 18px rgba(0,0,0,.12);
+                text-align: center;
+
             }
 
             .mis-subtitle { font-size: 13px; font-weight: 400; opacity: .9; margin-top: 5px; }
@@ -1110,13 +1112,9 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
             }
         </style>
 
-        <div class="mis-wrap">
-            <div class="mis-header">
-                Vinod Cookware — <span id="header-quarter-label"></span> Performance Dashboard
-                <div class="mis-subtitle">
-                    One-click MIS dashboard with all worksheet sections and full Excel download.
-                </div>
-            </div>
+        <div class="mis-header">
+            Vinod Cookware — <span id="header-quarter-label"></span> Performance Dashboard
+        </div>
 
             <div class="mis-quarter-bar">
                 <span class="quarter-current-label">Financial Year</span>
@@ -1131,17 +1129,7 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
 
                 <span class="quarter-range-label" id="quarter-range-label"></span>
 
-                <div class="custom-range-bar">
-                    <label>Custom Range:</label>
-                    <input type="date" id="custom-from-date">
-                    <span style="font-weight:600;color:#64748b;font-size:12px;">to</span>
-                    <input type="date" id="custom-to-date">
-                    <button id="apply-custom-range">Apply</button>
-                    <span id="custom-range-active-label"
-                          style="font-size:11px;color:#0f766e;font-weight:700;display:none;">
-                        ✓ Custom range active
-                    </span>
-                </div>
+            
                  <div class="month-bar">
                     <label>Month:</label>
                     <div class="month-btns" id="month-btns"></div>
@@ -1190,10 +1178,7 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
                     South TSO Details
                     <small>South region detail</small>
                 </div>
-                <div class="mis-btn black" id="download-full-excel">
-                    Download Full MIS Excel
-                    <small>Download all worksheet reports</small>
-                </div>
+               
             </div>
 
             <div class="mis-kpis">
@@ -1294,19 +1279,19 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
         }, 400);
     });
 
-    $(page.body).find("#download-full-excel").on("click", function() {
-        let filters = {
-            from_date: from_date,
-            to_date: to_date,
-            customer_group: "Debtors Distributors",
-            view_type: "TSO Summary"
-        };
-        let query = new URLSearchParams(filters).toString();
-        window.open(
-            "/api/method/vinod_sale_target.vinod_sale_target.report.test_report.test_report.download_mis_excel?"
-            + query
-        );
-    });
+    // $(page.body).find("#download-full-excel").on("click", function() {
+    //     let filters = {
+    //         from_date: from_date,
+    //         to_date: to_date,
+    //         customer_group: "Debtors Distributors",
+    //         view_type: "TSO Summary"
+    //     };
+    //     let query = new URLSearchParams(filters).toString();
+    //     window.open(
+    //         "/api/method/vinod_sale_target.vinod_sale_target.report.test_report.test_report.download_mis_excel?"
+    //         + query
+    //     );
+    // });
 
     // --------------------------------------------------------------
     // Quarter switcher wiring
@@ -1378,13 +1363,20 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
                          "Jul","Aug","Sep","Oct","Nov","Dec"];
     let selected_month = null;
 
-    function get_month_dates(month, fy_start_year) {
-        // Apr-Dec belong to fy_start_year, Jan-Mar belong to fy_start_year + 1
-        let year  = month >= 4 ? fy_start_year : fy_start_year + 1;
-        let start = new Date(year, month - 1, 1);
-        let end   = new Date(year, month, 0);
-        return { from_date: fmt_date(start), to_date: fmt_date(end), year: year };
-    }
+    // function get_month_dates(month, fy_start_year) {
+    //     // Apr-Dec belong to fy_start_year, Jan-Mar belong to fy_start_year + 1
+    //     let year  = month >= 4 ? fy_start_year : fy_start_year + 1;
+    //     let start = new Date(year, month - 1, 1);
+    //     let end   = new Date(year, month, 0);
+    //     return { from_date: fmt_date(start), to_date: fmt_date(end), year: year };
+    // }
+
+    function get_month_dates(month, year) {
+    // Normal calendar: Jan-Dec all belong to the selected year
+    let start = new Date(year, month - 1, 1);
+    let end   = new Date(year, month, 0);
+    return { from_date: fmt_date(start), to_date: fmt_date(end), year: year };
+}
 
     let $fy_select = $(page.body).find("#fy-select");
 
@@ -1417,15 +1409,15 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
         $("#quarter-range-label").text(
             frappe.datetime.str_to_user(from_date) + "  to  " + frappe.datetime.str_to_user(to_date)
         );
-        $(page.body).find("#custom-range-active-label").hide();
+        // $(page.body).find("#custom-range-active-label").hide();
     }
 
     function apply_quarter_change() {
         let d = get_fy_quarter_dates(selected_quarter, selected_fy_start_year);
         from_date = d.from_date;
         to_date   = d.to_date;
-        $(page.body).find("#custom-from-date").val(from_date);
-        $(page.body).find("#custom-to-date").val(to_date);
+        // $(page.body).find("#custom-from-date").val(from_date);
+        // $(page.body).find("#custom-to-date").val(to_date);
         update_quarter_ui();
         load_dashboard_data();
     }
@@ -1434,8 +1426,8 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
         let d = get_month_dates(selected_month, selected_fy_start_year);
         from_date = d.from_date;
         to_date   = d.to_date;
-        $(page.body).find("#custom-from-date").val(from_date);
-        $(page.body).find("#custom-to-date").val(to_date);
+        // $(page.body).find("#custom-from-date").val(from_date);
+        // $(page.body).find("#custom-to-date").val(to_date);
         update_quarter_ui();
         load_dashboard_data();
     }
@@ -1462,27 +1454,27 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
         }
     });
 
-    // Custom date range
-    $(page.body).find("#custom-from-date").val(from_date);
-    $(page.body).find("#custom-to-date").val(to_date);
+    // // Custom date range
+    // $(page.body).find("#custom-from-date").val(from_date);
+    // $(page.body).find("#custom-to-date").val(to_date);
 
-    $(page.body).find("#apply-custom-range").on("click", function() {
-        let f = $(page.body).find("#custom-from-date").val();
-        let t = $(page.body).find("#custom-to-date").val();
-        if (!f || !t) { frappe.msgprint("Please select both From and To dates."); return; }
-        if (f > t)    { frappe.msgprint("From date cannot be after To date."); return; }
-        $(page.body).find(".quarter-btn, .month-btn").removeClass("active");
-        selected_quarter = null;
-        selected_month   = null;
-        from_date = f;
-        to_date   = t;
-        $("#header-quarter-label").text("Custom Range");
-        $("#quarter-range-label").text(
-            frappe.datetime.str_to_user(from_date) + "  to  " + frappe.datetime.str_to_user(to_date)
-        );
-        $(page.body).find("#custom-range-active-label").show();
-        load_dashboard_data();
-    });
+    // $(page.body).find("#apply-custom-range").on("click", function() {
+    //     let f = $(page.body).find("#custom-from-date").val();
+    //     let t = $(page.body).find("#custom-to-date").val();
+    //     if (!f || !t) { frappe.msgprint("Please select both From and To dates."); return; }
+    //     if (f > t)    { frappe.msgprint("From date cannot be after To date."); return; }
+    //     $(page.body).find(".quarter-btn, .month-btn").removeClass("active");
+    //     selected_quarter = null;
+    //     selected_month   = null;
+    //     from_date = f;
+    //     to_date   = t;
+    //     $("#header-quarter-label").text("Custom Range");
+    //     $("#quarter-range-label").text(
+    //         frappe.datetime.str_to_user(from_date) + "  to  " + frappe.datetime.str_to_user(to_date)
+    //     );
+    //     $(page.body).find("#custom-range-active-label").show();
+    //     load_dashboard_data();
+    // });
 
     update_quarter_ui();
 
