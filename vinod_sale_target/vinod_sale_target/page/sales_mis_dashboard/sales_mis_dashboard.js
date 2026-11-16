@@ -1458,6 +1458,7 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
     // --------------------------------------------------------------
     let _last_category_data = [];
     let _last_area_data     = [];
+    let _last_region_cat    = {};
 
     $(page.body).find("#region-cat-region").on("change", function() {
         render_region_cat_chart(_last_category_data, _last_area_data);
@@ -1478,6 +1479,7 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
 
                 _last_category_data = d.category_summary || [];
                 _last_area_data     = d.area_summary     || [];
+                _last_region_cat    = d.region_category  || {};
 
                 render_category_table(_last_category_data);
                 render_area_table(_last_area_data);
@@ -1620,54 +1622,115 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
         }
     }
 
-    // ✅ CHANGED: sort region×category chart and table by achievement % descending
+    // // ✅ CHANGED: sort region×category chart and table by achievement % descending
+    // function render_region_cat_chart(category_rows, area_rows) {
+    //     let selected_region = $(page.body).find("#region-cat-region").val();
+
+    //     let labels   = category_rows.map(r => r.category);
+    //     let targets  = category_rows.map(r => r.target   || 0);
+    //     let achieved = category_rows.map(r => r.achieved || 0);
+    //     let gap      = category_rows.map(r => Math.max(r.gap || 0, 0));
+
+    //     if (selected_region && area_rows.length) {
+    //         let area = area_rows.find(a => a.area === selected_region);
+    //         let total_achieved_all = area_rows.reduce((s, a) => s + (a.achieved || 0), 0);
+    //         let total_target_all   = area_rows.reduce((s, a) => s + (a.target   || 0), 0);
+    //         let ach_ratio = (area && total_achieved_all) ? area.achieved / total_achieved_all : 1;
+    //         let tgt_ratio = (area && total_target_all)   ? area.target   / total_target_all   : 1;
+    //         targets  = category_rows.map(r => (r.target   || 0) * tgt_ratio);
+    //         achieved = category_rows.map(r => (r.achieved || 0) * ach_ratio);
+    //         gap      = targets.map((t, i) => Math.max(t - achieved[i], 0));
+    //     }
+
+    //     // ✅ sort indices by achievement % descending
+    //     let sorted_indices = category_rows
+    //         .map((r, i) => ({
+    //             i,
+    //             p: targets[i] ? (achieved[i] / targets[i] * 100) : 0
+    //         }))
+    //         .sort((a, b) => b.p - a.p);
+
+    //     let sorted_labels   = sorted_indices.map(x => labels[x.i]);
+    //     let sorted_targets  = sorted_indices.map(x => targets[x.i]);
+    //     let sorted_achieved = sorted_indices.map(x => achieved[x.i]);
+    //     let sorted_gap      = sorted_indices.map(x => Math.max(sorted_targets[sorted_indices.indexOf(x)] - sorted_achieved[sorted_indices.indexOf(x)], 0));
+
+    //     // fix gap after sort
+    //     sorted_gap = sorted_indices.map(x => Math.max(targets[x.i] - achieved[x.i], 0));
+
+    //     $("#region-cat-chart").empty();
+    //     if (sorted_labels.length) {
+    //         new frappe.Chart("#region-cat-chart", {
+    //             title: selected_region
+    //                 ? `${selected_region} — Category Target vs Achieved`
+    //                 : "All Regions — Category Target vs Achieved",
+    //             data: {
+    //                 labels: sorted_labels,
+    //                 datasets: [
+    //                     { name: "Target",       values: sorted_targets  },
+    //                     { name: "Achieved",     values: sorted_achieved },
+    //                     { name: "Not Achieved", values: sorted_gap      }
+    //                 ]
+    //             },
+    //             type: "bar",
+    //             height: 320,
+    //             colors: ["#FFC107", "#4F81BD", "#C0504D"]
+    //         });
+    //     }
+
+    //     // table also sorted by achievement % descending
+    //     let html = `
+    //         <tr>
+    //             <th>Category</th>
+    //             <th>Target</th>
+    //             <th>Achieved</th>
+    //             <th>Gap</th>
+    //             <th>%Ach</th>
+    //         </tr>
+    //     `;
+
+    //     sorted_indices.forEach(({ i }) => {
+    //         let t = targets[i];
+    //         let a = achieved[i];
+    //         let g = Math.max(t - a, 0);
+    //         let p = t ? (a / t * 100) : 0;
+    //         html += `
+    //             <tr>
+    //                 <td>${category_rows[i].category || ""}</td>
+    //                 <td class="target">${money(t)}</td>
+    //                 <td class="achieved">${money(a)}</td>
+    //                 <td class="gap">${money(g)}</td>
+    //                 <td class="percent">${pct(p)}</td>
+    //             </tr>
+    //         `;
+    //     });
+
+    //     $("#region-cat-table").html(html);
+    // }
+
+    // Region × Category: uses real per-region data from the server
     function render_region_cat_chart(category_rows, area_rows) {
         let selected_region = $(page.body).find("#region-cat-region").val();
 
-        let labels   = category_rows.map(r => r.category);
-        let targets  = category_rows.map(r => r.target   || 0);
-        let achieved = category_rows.map(r => r.achieved || 0);
-        let gap      = category_rows.map(r => Math.max(r.gap || 0, 0));
-
-        if (selected_region && area_rows.length) {
-            let area = area_rows.find(a => a.area === selected_region);
-            let total_achieved_all = area_rows.reduce((s, a) => s + (a.achieved || 0), 0);
-            let total_target_all   = area_rows.reduce((s, a) => s + (a.target   || 0), 0);
-            let ach_ratio = (area && total_achieved_all) ? area.achieved / total_achieved_all : 1;
-            let tgt_ratio = (area && total_target_all)   ? area.target   / total_target_all   : 1;
-            targets  = category_rows.map(r => (r.target   || 0) * tgt_ratio);
-            achieved = category_rows.map(r => (r.achieved || 0) * ach_ratio);
-            gap      = targets.map((t, i) => Math.max(t - achieved[i], 0));
+        let rows = category_rows;
+        if (selected_region && _last_region_cat[selected_region]) {
+            rows = _last_region_cat[selected_region];
         }
 
-        // ✅ sort indices by achievement % descending
-        let sorted_indices = category_rows
-            .map((r, i) => ({
-                i,
-                p: targets[i] ? (achieved[i] / targets[i] * 100) : 0
-            }))
-            .sort((a, b) => b.p - a.p);
-
-        let sorted_labels   = sorted_indices.map(x => labels[x.i]);
-        let sorted_targets  = sorted_indices.map(x => targets[x.i]);
-        let sorted_achieved = sorted_indices.map(x => achieved[x.i]);
-        let sorted_gap      = sorted_indices.map(x => Math.max(sorted_targets[sorted_indices.indexOf(x)] - sorted_achieved[sorted_indices.indexOf(x)], 0));
-
-        // fix gap after sort
-        sorted_gap = sorted_indices.map(x => Math.max(targets[x.i] - achieved[x.i], 0));
+        let sorted = rows.slice().sort((a, b) => (b.achievement || 0) - (a.achievement || 0));
 
         $("#region-cat-chart").empty();
-        if (sorted_labels.length) {
+        if (sorted.length) {
             new frappe.Chart("#region-cat-chart", {
                 title: selected_region
                     ? `${selected_region} — Category Target vs Achieved`
                     : "All Regions — Category Target vs Achieved",
                 data: {
-                    labels: sorted_labels,
+                    labels: sorted.map(r => r.category),
                     datasets: [
-                        { name: "Target",       values: sorted_targets  },
-                        { name: "Achieved",     values: sorted_achieved },
-                        { name: "Not Achieved", values: sorted_gap      }
+                        { name: "Target",       values: sorted.map(r => r.target   || 0) },
+                        { name: "Achieved",     values: sorted.map(r => r.achieved || 0) },
+                        { name: "Not Achieved", values: sorted.map(r => Math.max((r.target || 0) - (r.achieved || 0), 0)) }
                     ]
                 },
                 type: "bar",
@@ -1676,7 +1739,6 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
             });
         }
 
-        // table also sorted by achievement % descending
         let html = `
             <tr>
                 <th>Category</th>
@@ -1687,14 +1749,14 @@ frappe.pages["sales-mis-dashboard"].on_page_load = function(wrapper) {
             </tr>
         `;
 
-        sorted_indices.forEach(({ i }) => {
-            let t = targets[i];
-            let a = achieved[i];
+        sorted.forEach(r => {
+            let t = r.target   || 0;
+            let a = r.achieved || 0;
             let g = Math.max(t - a, 0);
             let p = t ? (a / t * 100) : 0;
             html += `
                 <tr>
-                    <td>${category_rows[i].category || ""}</td>
+                    <td>${r.category || ""}</td>
                     <td class="target">${money(t)}</td>
                     <td class="achieved">${money(a)}</td>
                     <td class="gap">${money(g)}</td>

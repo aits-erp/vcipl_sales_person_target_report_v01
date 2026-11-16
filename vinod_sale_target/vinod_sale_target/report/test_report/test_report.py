@@ -2528,7 +2528,32 @@ def get_mis_dashboard_data(from_date=None, to_date=None):
         "MPCG":      lambda r: row_matches_section(r, *AREA_FIELD_MAP["MPCG"]),
     }
 
-    area_summary = []
+    # area_summary = []
+    # for area, condition in AREA_MAP.items():
+    #     rows     = [x for x in data if condition(x)]
+    #     target   = sum(flt(r.get("total_target"))   for r in rows)
+    #     achieved = sum(flt(r.get("total_achieved")) for r in rows)
+    #     gap      = target - achieved
+    #     area_summary.append({
+    #         "area":        area,
+    #         "target":      target,
+    #         "achieved":    achieved,
+    #         "gap":         gap,
+    #         "achievement": achieved / target * 100 if target else 0
+    #     })
+
+    # return {
+    #     "kpi": {
+    #         "target":      total_target,
+    #         "achieved":    total_achieved,
+    #         "gap":         total_gap,
+    #         "achievement": total_achievement
+    #     },
+    #     "category_summary": category_summary,
+    #     "area_summary":     area_summary
+    # }
+
+        area_summary = []
     for area, condition in AREA_MAP.items():
         rows     = [x for x in data if condition(x)]
         target   = sum(flt(r.get("total_target"))   for r in rows)
@@ -2542,6 +2567,23 @@ def get_mis_dashboard_data(from_date=None, to_date=None):
             "achievement": achieved / target * 100 if target else 0
         })
 
+    # NEW: real category totals for each region
+    region_category = {}
+    for area, condition in AREA_MAP.items():
+        area_rows = [x for x in data if condition(x)]
+        region_category[area] = []
+        for cat in categories:
+            safe = safe_field(cat)
+            t = sum(flt(r.get(f"{safe}_target"))   for r in area_rows)
+            a = sum(flt(r.get(f"{safe}_achieved")) for r in area_rows)
+            region_category[area].append({
+                "category":    cat,
+                "target":      t,
+                "achieved":    a,
+                "gap":         t - a,
+                "achievement": a / t * 100 if t else 0
+            })
+
     return {
         "kpi": {
             "target":      total_target,
@@ -2550,5 +2592,6 @@ def get_mis_dashboard_data(from_date=None, to_date=None):
             "achievement": total_achievement
         },
         "category_summary": category_summary,
-        "area_summary":     area_summary
+        "area_summary":     area_summary,
+        "region_category":  region_category      # NEW
     }
