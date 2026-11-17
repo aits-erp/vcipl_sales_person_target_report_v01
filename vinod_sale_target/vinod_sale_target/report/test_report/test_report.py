@@ -2552,8 +2552,9 @@ def get_mis_dashboard_data(from_date=None, to_date=None):
     #     "category_summary": category_summary,
     #     "area_summary":     area_summary
     # }
+    
 
-        area_summary = []
+    area_summary = []
     for area, condition in AREA_MAP.items():
         rows     = [x for x in data if condition(x)]
         target   = sum(flt(r.get("total_target"))   for r in rows)
@@ -2593,5 +2594,6 @@ def get_mis_dashboard_data(from_date=None, to_date=None):
         },
         "category_summary": category_summary,
         "area_summary":     area_summary,
-        "region_category":  region_category      # NEW
+        "region_category":  region_category
     }
+
