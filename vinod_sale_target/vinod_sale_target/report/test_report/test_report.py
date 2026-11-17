@@ -1415,6 +1415,7 @@ def get_columns(categories, filters=None):
         {"label": _("Month"),            "fieldname": "month",               "fieldtype": "Data",     "width": 100},
         {"label": _("TSO"),              "fieldname": "tso_name",            "fieldtype": "Data",     "width": 200},
         {"label": _("Customer Name"),    "fieldname": "customer_name",       "fieldtype": "Data",     "width": 220},
+        {"label": _("Customer Group"),   "fieldname": "customer_group",      "fieldtype": "Data",     "width": 200},
         {"label": _("Region"),           "fieldname": "custom_region",       "fieldtype": "Data",     "width": 130},
         {"label": _("Territory Code"),   "fieldname": "custom_territory",    "fieldtype": "Data",     "width": 130},
         {"label": _("Head Sales Person"),"fieldname": "parent_sales_person", "fieldtype": "Data",     "width": 200},
@@ -1609,6 +1610,7 @@ def get_achieved_data(filters, categories):
         MONTH(si.posting_date),
         YEAR(si.posting_date),
         si.customer,
+        si.customer_group,
         sp_cust.name,
         sp_cust.parent_sales_person,
         sp_cust.custom_region,
@@ -1630,6 +1632,7 @@ def get_achieved_data(filters, categories):
             MONTH(si.posting_date)                    AS month_num,
             YEAR(si.posting_date)                     AS year,
             si.customer                               AS customer,
+            si.customer_group                         AS customer_group,
             COALESCE(sp_cust.name, 'Unassigned')      AS tso_name,
             COALESCE(sp_cust.parent_sales_person, '')  AS parent_sales_person,
             COALESCE(sp_cust.custom_region, '')        AS custom_region,
@@ -1688,6 +1691,7 @@ def get_achieved_data(filters, categories):
         if key not in result:
             entry = {
                 "customer":            customer,
+                "customer_group":      row.customer_group or "",
                 "month":               f"{MONTHS[int(row.month_num)-1]}-{row.year}",
                 "month_num":           row.month_num,
                 "year":                row.year,
@@ -1802,6 +1806,7 @@ def get_target_skeleton_rows(filters, categories, month_year_list):
         SELECT
             spt.name                                    AS customer,
             c.customer_name                             AS customer_name,
+            c.customer_group                            AS customer_group,
             mtd.main_group                              AS category,
             {month_field_cols},
             COALESCE(sp_cust.name, 'Unassigned')        AS tso_name,
@@ -1828,6 +1833,7 @@ def get_target_skeleton_rows(filters, categories, month_year_list):
     for r in rows:
         info = by_customer.setdefault(r.customer, {
             "customer_name":          r.customer_name or "No Customer",
+            "customer_group":         r.customer_group or "",
             "tso_name":               r.tso_name,
             "parent_sales_person":    r.parent_sales_person,
             "custom_region":          r.custom_region,
@@ -1853,6 +1859,7 @@ def get_target_skeleton_rows(filters, categories, month_year_list):
                     "year":                   year,
                     "tso_name":               info["tso_name"],
                     "customer_name":          info["customer_name"],
+                    "customer_group":         info["customer_group"],
                     "parent_sales_person":    info["parent_sales_person"],
                     "custom_region":          info["custom_region"],
                     "custom_territory":       info["custom_territory"],
@@ -1982,6 +1989,7 @@ def aggregate_party_wise(data, categories):
             entry = {
                 "customer":               row.get("customer"),
                 "customer_name":          row.get("customer_name"),
+                "customer_group":         row.get("customer_group"),
                 "tso_name":               row.get("tso_name"),
                 "parent_sales_person":    row.get("parent_sales_person"),
                 "custom_region":          row.get("custom_region"),
@@ -2263,7 +2271,7 @@ def make_tso_summary_sheet(ws, data, categories,
     thin   = Side(style="thin", color="999999")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    headers = ["Region", "TSO", "Distributor"]
+    headers = ["Region", "TSO", "Distributor", "Customer Group"]
     for cat in categories:
         headers.append(f"{cat} Target")
         headers.append(f"{cat} Achieved")
@@ -2308,7 +2316,7 @@ def make_tso_summary_sheet(ws, data, categories,
         ws.cell(r, 1).value = region
         ws.cell(r, 2).value = tso
         ws.cell(r, 3).value = f"TOTAL — {tso}"
-        for col in range(4, ncols):
+        for col in range(5, ncols):
             L = get_column_letter(col)
             ws.cell(r, col).value = f"=SUM({L}{start}:{L}{end})"
         ws.cell(r, ncols).value = f"=IF({tt_col}{r}=0,0,{ta_col}{r}/{tt_col}{r})"
@@ -2317,7 +2325,7 @@ def make_tso_summary_sheet(ws, data, categories,
             c.font   = Font(bold=True)
             c.fill   = PatternFill("solid", fgColor=total_fill)
             c.border = border
-            if col > 3:
+            if col > 4:
                 c.number_format = "0.00%" if col == ncols else '#,##0.00'
 
     row_no         = header_row + 1
@@ -2337,7 +2345,7 @@ def make_tso_summary_sheet(ws, data, categories,
         current_tso    = tso
         current_region = row.get("custom_region")
 
-        values = [row.get("custom_region"), tso, row.get("customer_name")]
+        values = [row.get("custom_region"), tso, row.get("customer_name"), row.get("customer_group")]
         for cat in categories:
             safe = safe_field(cat)
             values.append(flt(row.get(f"{safe}_target")))
@@ -2353,10 +2361,10 @@ def make_tso_summary_sheet(ws, data, categories,
             cell.value     = value
             cell.border    = border
             cell.alignment = Alignment(vertical="center", wrap_text=True)
-            if col > 3:
+            if col > 4:
                 cell.number_format = '#,##0.00'
-            if 4 <= col <= ncols - 3:
-                cell.fill = PatternFill("solid", fgColor=yellow if (col - 4) % 2 == 0 else blue)
+            if 5 <= col <= ncols - 3:
+                cell.fill = PatternFill("solid", fgColor=yellow if (col - 5) % 2 == 0 else blue)
             if col == ncols:
                 cell.number_format = "0.00%"
 
@@ -2371,7 +2379,7 @@ def make_tso_summary_sheet(ws, data, categories,
     total_row = row_no
     last_data = total_row - 1
     ws.cell(total_row, 1).value = "Grand Total"
-    for col in range(4, ncols):
+    for col in range(5, ncols):
         L = get_column_letter(col)
         ws.cell(total_row, col).value = (
             f'=SUMIF($C${header_row+1}:$C${last_data},"TOTAL*",{L}{header_row+1}:{L}{last_data})'
@@ -2382,16 +2390,17 @@ def make_tso_summary_sheet(ws, data, categories,
         c.font   = Font(bold=True)
         c.fill   = PatternFill("solid", fgColor="B6D7A8")
         c.border = border
-        if col > 3:
+        if col > 4:
             c.number_format = "0.00%" if col == ncols else '#,##0.00'
 
-    ws.freeze_panes = f"D{header_row+1}"
+    ws.freeze_panes = f"E{header_row+1}"
     # CHANGED: filter only on the header row (not on the title rows)
     ws.auto_filter.ref = f"A{header_row}:{get_column_letter(ncols)}{total_row-1}"
     ws.column_dimensions["A"].width = 14
     ws.column_dimensions["B"].width = 24
     ws.column_dimensions["C"].width = 35
-    for col in range(4, ncols + 1):
+    ws.column_dimensions["D"].width = 22
+    for col in range(5, ncols + 1):
         ws.column_dimensions[get_column_letter(col)].width = 14
 
 
@@ -2471,11 +2480,11 @@ def add_region_chart(ws, header_row=1):
 
 
 @frappe.whitelist()
-def get_mis_dashboard_data(from_date=None, to_date=None):
+def get_mis_dashboard_data(from_date=None, to_date=None, customer_group=None):
     filters = frappe._dict({
         "from_date":      from_date,
         "to_date":        to_date,
-        "customer_group": "Debtors Distributors"
+        "customer_group": customer_group or "Debtors Distributors"
     })
 
     categories = get_categories(filters)
