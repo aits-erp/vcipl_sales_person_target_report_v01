@@ -701,7 +701,7 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
             .mis-wrap { padding: 18px; background: #f5f7fb; }
 
             .mis-header {
-                background: linear-gradient(135deg, #064e3b, #0f766e);
+                background: linear-gradient(135deg, #005a8d, #0077b6);
                 color: white; padding: 18px 22px; border-radius: 12px;
                 font-size: 22px; font-weight: 800; margin-bottom: 14px;
                 box-shadow: 0 6px 18px rgba(0,0,0,.12);
@@ -718,17 +718,17 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
 
             .quarter-btns { display: flex; gap: 8px; }
             .quarter-btn {
-                padding: 7px 16px; border-radius: 8px; border: 1px solid #0f766e;
-                background: white; color: #0f766e; font-weight: 700; cursor: pointer;
+                padding: 7px 16px; border-radius: 8px; border: 1px solid #0077b6;
+                background: white; color: #0077b6; font-weight: 700; cursor: pointer;
                 font-size: 13px; transition: all .15s ease;
             }
-            .quarter-btn:hover { background: #e6f4f1; }
-            .quarter-btn.active { background: #0f766e; color: white; }
+            .quarter-btn:hover { background: #e0f2fb; }
+            .quarter-btn.active { background: #0077b6; color: white; }
 
             .custom-range-bar {
                 display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-                padding: 10px 16px; background: #f0fdf4; border-radius: 10px;
-                border: 1px solid #bbf7d0; margin-top: 4px; width: 100%;
+                padding: 10px 16px; background: #f0f9ff; border-radius: 10px;
+                border: 1px solid #bae6fd; margin-top: 4px; width: 100%;
             }
             .custom-range-bar label { font-weight: 700; color: #0b3d5c; font-size: 13px; }
             .custom-range-bar input[type="date"] {
@@ -736,11 +736,11 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
                 font-weight: 600; color: #1e293b; font-size: 12px;
             }
             .custom-range-bar button {
-                padding: 6px 16px; border-radius: 8px; background: #0f766e;
+                padding: 6px 16px; border-radius: 8px; background: #0077b6;
                 color: white; border: none; font-weight: 700; cursor: pointer;
                 font-size: 12px; transition: background .15s;
             }
-            .custom-range-bar button:hover { background: #064e3b; }
+            .custom-range-bar button:hover { background: #005a8d; }
 
             .quarter-range-label { font-size: 12px; color: #64748b; font-weight: 600; margin-left: auto; }
 
@@ -752,31 +752,35 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
             .month-bar label { font-weight: 700; color: #0b3d5c; font-size: 13px; }
             .month-btns { display: flex; gap: 6px; flex-wrap: wrap; }
             .month-btn {
-                padding: 5px 12px; border-radius: 8px; border: 1px solid #0f766e;
-                background: white; color: #0f766e; font-weight: 700; cursor: pointer;
+                padding: 5px 12px; border-radius: 8px; border: 1px solid #0077b6;
+                background: white; color: #0077b6; font-weight: 700; cursor: pointer;
                 font-size: 12px; transition: all .15s ease;
             }
-            .month-btn:hover { background: #e6f4f1; }
-            .month-btn.active { background: #0f766e; color: white; }
+            .month-btn:hover { background: #e0f2fb; }
+            .month-btn.active { background: #0077b6; color: white; }
 
             .mis-section-title { font-size: 16px; font-weight: 800; color: #0b3d5c; margin: 18px 0 10px; }
 
-            /* ---------- Customer Group tabs (blue) ---------- */
-            .cg-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+            /* ---------- Customer Group tabs (blue, 6 per row) ---------- */
+            .cg-tabs {
+                display: grid;
+                grid-template-columns: repeat(6, 1fr);
+                gap: 12px; margin-bottom: 18px;
+            }
             .cg-tab {
-                padding: 12px 18px; border-radius: 12px; color: white; font-weight: 800;
-                font-size: 13px; cursor: pointer; text-align: center;
+                padding: 15px 14px; border-radius: 12px; color: white; font-weight: 800;
+                font-size: 14px; cursor: pointer; text-align: center;
+                min-height: 70px; display: flex; align-items: center; justify-content: center;
                 background: #0077b6;
                 box-shadow: 0 6px 15px rgba(0,0,0,.15); transition: all .2s ease;
-                opacity: .8;
             }
-            .cg-tab:hover { transform: translateY(-3px); opacity: 1; }
-            .cg-tab.active { opacity: 1; outline: 3px solid #0b3d5c; box-shadow: 0 10px 25px rgba(0,0,0,.25); }
+            .cg-tab:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,.22); }
+            .cg-tab.active { outline: 3px solid #0b3d5c; box-shadow: 0 10px 25px rgba(0,0,0,.25); }
             /* parent groups (include their child groups) = darker shade of the same blue */
             .cg-tab.cg-parent { background: #005a8d; }
 
             .mis-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 18px; }
-            .kpi-card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 4px 14px rgba(0,0,0,.08); border-left: 6px solid #0f766e; }
+            .kpi-card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 4px 14px rgba(0,0,0,.08); border-left: 6px solid #0077b6; }
             .kpi-label { font-size: 13px; color: #64748b; font-weight: 600; }
             .kpi-value { font-size: 23px; font-weight: 800; margin-top: 6px; color: #1e293b; }
 
@@ -796,6 +800,9 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
             .region-cat-filter select { padding: 5px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; font-weight: 600; color: #1e293b; }
             .region-cat-filter label { font-size: 12px; font-weight: 700; color: #0b3d5c; }
 
+            @media (max-width: 1100px) {
+                .cg-tabs { grid-template-columns: repeat(3, 1fr); }
+            }
             @media (max-width: 900px) {
                 .mis-grid { grid-template-columns: 1fr; }
                 .quarter-range-label { margin-left: 0; }
@@ -830,7 +837,7 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
                     <input type="date" id="custom-to-date">
                     <button id="apply-custom-range">Apply</button>
                     <span id="custom-range-active-label"
-                          style="font-size:11px;color:#0f766e;font-weight:700;display:none;">
+                          style="font-size:11px;color:#0077b6;font-weight:700;display:none;">
                         ✓ Custom range active
                     </span>
                 </div>
