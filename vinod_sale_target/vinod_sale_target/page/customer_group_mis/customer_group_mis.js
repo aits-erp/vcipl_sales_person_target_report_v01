@@ -701,7 +701,7 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
             .mis-wrap { padding: 18px; background: #f5f7fb; }
 
             .mis-header {
-                background: linear-gradient(135deg, #005a8d, #0077b6);
+                background: linear-gradient(135deg, #064e3b, #0f766e);
                 color: white; padding: 18px 22px; border-radius: 12px;
                 font-size: 22px; font-weight: 800; margin-bottom: 14px;
                 box-shadow: 0 6px 18px rgba(0,0,0,.12);
@@ -718,17 +718,17 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
 
             .quarter-btns { display: flex; gap: 8px; }
             .quarter-btn {
-                padding: 7px 16px; border-radius: 8px; border: 1px solid #0077b6;
-                background: white; color: #0077b6; font-weight: 700; cursor: pointer;
+                padding: 7px 16px; border-radius: 8px; border: 1px solid #0f766e;
+                background: white; color: #0f766e; font-weight: 700; cursor: pointer;
                 font-size: 13px; transition: all .15s ease;
             }
-            .quarter-btn:hover { background: #e0f2fb; }
-            .quarter-btn.active { background: #0077b6; color: white; }
+            .quarter-btn:hover { background: #e6f4f1; }
+            .quarter-btn.active { background: #0f766e; color: white; }
 
             .custom-range-bar {
                 display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-                padding: 10px 16px; background: #f0f9ff; border-radius: 10px;
-                border: 1px solid #bae6fd; margin-top: 4px; width: 100%;
+                padding: 10px 16px; background: #f0fdf4; border-radius: 10px;
+                border: 1px solid #bbf7d0; margin-top: 4px; width: 100%;
             }
             .custom-range-bar label { font-weight: 700; color: #0b3d5c; font-size: 13px; }
             .custom-range-bar input[type="date"] {
@@ -736,11 +736,11 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
                 font-weight: 600; color: #1e293b; font-size: 12px;
             }
             .custom-range-bar button {
-                padding: 6px 16px; border-radius: 8px; background: #0077b6;
+                padding: 6px 16px; border-radius: 8px; background: #0f766e;
                 color: white; border: none; font-weight: 700; cursor: pointer;
                 font-size: 12px; transition: background .15s;
             }
-            .custom-range-bar button:hover { background: #005a8d; }
+            .custom-range-bar button:hover { background: #064e3b; }
 
             .quarter-range-label { font-size: 12px; color: #64748b; font-weight: 600; margin-left: auto; }
 
@@ -752,35 +752,36 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
             .month-bar label { font-weight: 700; color: #0b3d5c; font-size: 13px; }
             .month-btns { display: flex; gap: 6px; flex-wrap: wrap; }
             .month-btn {
-                padding: 5px 12px; border-radius: 8px; border: 1px solid #0077b6;
-                background: white; color: #0077b6; font-weight: 700; cursor: pointer;
+                padding: 5px 12px; border-radius: 8px; border: 1px solid #0f766e;
+                background: white; color: #0f766e; font-weight: 700; cursor: pointer;
                 font-size: 12px; transition: all .15s ease;
             }
-            .month-btn:hover { background: #e0f2fb; }
-            .month-btn.active { background: #0077b6; color: white; }
+            .month-btn:hover { background: #e6f4f1; }
+            .month-btn.active { background: #0f766e; color: white; }
 
             .mis-section-title { font-size: 16px; font-weight: 800; color: #0b3d5c; margin: 18px 0 10px; }
 
-            /* ---------- Customer Group tabs (blue, 6 per row) ---------- */
+            /* ---------- Customer Group tabs (green, 6 per row) ---------- */
             .cg-tabs {
                 display: grid;
                 grid-template-columns: repeat(6, 1fr);
-                gap: 12px; margin-bottom: 18px;
+                gap: 10px; margin-bottom: 18px;
             }
             .cg-tab {
-                padding: 15px 14px; border-radius: 12px; color: white; font-weight: 800;
-                font-size: 14px; cursor: pointer; text-align: center;
-                min-height: 70px; display: flex; align-items: center; justify-content: center;
-                background: #0077b6;
-                box-shadow: 0 6px 15px rgba(0,0,0,.15); transition: all .2s ease;
+                padding: 10px 12px; border-radius: 10px; color: white; font-weight: 800;
+                font-size: 13px; cursor: pointer; text-align: center;
+                min-height: 42px; display: flex; align-items: center; justify-content: center;
+                background: linear-gradient(135deg, #047857, #10b981);
+                box-shadow: 0 4px 10px rgba(0,0,0,.15); transition: all .2s ease;
+                opacity: .75;
             }
-            .cg-tab:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,.22); }
-            .cg-tab.active { outline: 3px solid #0b3d5c; box-shadow: 0 10px 25px rgba(0,0,0,.25); }
-            /* parent groups (include their child groups) = darker shade of the same blue */
-            .cg-tab.cg-parent { background: #005a8d; }
+            .cg-tab:hover { transform: translateY(-2px); opacity: 1; }
+            .cg-tab.active { opacity: 1; outline: 3px solid #0b3d5c; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+            /* parent groups (include their child groups) = same dark green as the header */
+            .cg-tab.cg-parent { background: linear-gradient(135deg, #064e3b, #0f766e); }
 
             .mis-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 18px; }
-            .kpi-card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 4px 14px rgba(0,0,0,.08); border-left: 6px solid #0077b6; }
+            .kpi-card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 4px 14px rgba(0,0,0,.08); border-left: 6px solid #0f766e; }
             .kpi-label { font-size: 13px; color: #64748b; font-weight: 600; }
             .kpi-value { font-size: 23px; font-weight: 800; margin-top: 6px; color: #1e293b; }
 
@@ -837,7 +838,7 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
                     <input type="date" id="custom-to-date">
                     <button id="apply-custom-range">Apply</button>
                     <span id="custom-range-active-label"
-                          style="font-size:11px;color:#0077b6;font-weight:700;display:none;">
+                          style="font-size:11px;color:#0f766e;font-weight:700;display:none;">
                         ✓ Custom range active
                     </span>
                 </div>
@@ -929,7 +930,7 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
                 selected_customer_group = row.name;
                 $wrap.find(".cg-tab").removeClass("active");
                 $t.addClass("active");
-                $("#header-cg-label").text(selected_customer_group);
+                $(page.body).find("#header-cg-label").text(selected_customer_group);
 
                 // refresh dashboard figures in the background (no freeze screen)
                 load_dashboard_data(true);
@@ -950,7 +951,7 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
             if (!rows.length) return;
             let names = rows.map(r => r.name);
             if (!names.includes(selected_customer_group)) selected_customer_group = names[0];
-            $("#header-cg-label").text(selected_customer_group);
+            $(page.body).find("#header-cg-label").text(selected_customer_group);
             render_cg_tabs(rows);
         });
     }
@@ -982,8 +983,8 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
             label = quarter_label(selected_quarter, selected_fy_start_year);
         }
 
-        $("#header-quarter-label").text(label);
-        $("#quarter-range-label").text(
+        $(page.body).find("#header-quarter-label").text(label);
+        $(page.body).find("#quarter-range-label").text(
             frappe.datetime.str_to_user(from_date) + "  to  " + frappe.datetime.str_to_user(to_date)
         );
         $(page.body).find("#custom-range-active-label").hide();
@@ -1044,8 +1045,8 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
         selected_month = null;
         from_date = f;
         to_date = t;
-        $("#header-quarter-label").text("Custom Range");
-        $("#quarter-range-label").text(
+        $(page.body).find("#header-quarter-label").text("Custom Range");
+        $(page.body).find("#quarter-range-label").text(
             frappe.datetime.str_to_user(from_date) + "  to  " + frappe.datetime.str_to_user(to_date)
         );
         $(page.body).find("#custom-range-active-label").show();
@@ -1074,10 +1075,10 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
                 let d = r.message || {};
                 let kpi = d.kpi || {};
 
-                $("#total-target").text(money(kpi.target));
-                $("#total-achieved").text(money(kpi.achieved));
-                $("#total-gap").text(money(kpi.gap));
-                $("#total-achievement").text(pct(kpi.achievement));
+                $(page.body).find("#total-target").text(money(kpi.target));
+                $(page.body).find("#total-achieved").text(money(kpi.achieved));
+                $(page.body).find("#total-gap").text(money(kpi.gap));
+                $(page.body).find("#total-achievement").text(pct(kpi.achievement));
 
                 _last_category_data = d.category_summary || [];
                 _last_area_data = d.area_summary || [];
@@ -1121,20 +1122,20 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
     }
 
     function render_category_table(rows) {
-        $("#category-table").html(table_html("Category", by_achievement(rows), "category"));
+        $(page.body).find("#category-table").html(table_html("Category", by_achievement(rows), "category"));
     }
 
     function render_gap_table(rows) {
-        $("#gap-table").html(table_html("Area", by_achievement(rows), "area"));
+        $(page.body).find("#gap-table").html(table_html("Area", by_achievement(rows), "area"));
     }
 
     function render_charts(category_rows, area_rows) {
-        $("#category-chart").empty();
-        $("#area-chart").empty();
+        $(page.body).find("#category-chart").empty();
+        $(page.body).find("#area-chart").empty();
 
         let sorted_cat = by_achievement(category_rows);
         if (sorted_cat.length) {
-            new frappe.Chart("#category-chart", {
+            new frappe.Chart($(page.body).find("#category-chart")[0], {
                 title: "Category — Achieved vs Gap",
                 data: {
                     labels: sorted_cat.map(r => r.category),
@@ -1151,7 +1152,7 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
 
         let sorted_area = by_achievement(area_rows);
         if (sorted_area.length) {
-            new frappe.Chart("#area-chart", {
+            new frappe.Chart($(page.body).find("#area-chart")[0], {
                 title: "Area — Achieved vs Gap",
                 data: {
                     labels: sorted_area.map(r => r.area),
@@ -1176,9 +1177,9 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
         }
         let sorted = by_achievement(rows);
 
-        $("#region-cat-chart").empty();
+        $(page.body).find("#region-cat-chart").empty();
         if (sorted.length) {
-            new frappe.Chart("#region-cat-chart", {
+            new frappe.Chart($(page.body).find("#region-cat-chart")[0], {
                 title: selected_region
                     ? `${selected_region} — Category Target vs Achieved`
                     : "All Regions — Category Target vs Achieved",
@@ -1212,7 +1213,7 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
                     <td class="percent">${pct(p)}</td>
                 </tr>`;
         });
-        $("#region-cat-table").html(html);
+        $(page.body).find("#region-cat-table").html(html);
     }
 
     // ------------------------------------------------------------------
