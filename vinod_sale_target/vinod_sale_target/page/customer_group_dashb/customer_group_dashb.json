@@ -1,0 +1,23 @@
+{
+ "content": null,
+ "creation": "2026-11-18 11:30:21.027334",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2026-11-18 11:38:32.244898",
+ "modified_by": "Administrator",
+ "module": "vinod_sale_target",
+ "name": "customer-group-dashb",
+ "owner": "Administrator",
+ "page_name": "customer-group-dashb",
+ "roles": [
+  {
+   "role": "All"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Customer Group Dashboard"
+}
