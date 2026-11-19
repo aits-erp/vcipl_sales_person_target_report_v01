@@ -4,7 +4,7 @@
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2026-11-18 11:38:32.244898",
+ "modified": "2026-11-19 14:50:04.574103",
  "modified_by": "Administrator",
  "module": "vinod_sale_target",
  "name": "customer-group-dashb",
@@ -12,7 +12,7 @@
  "page_name": "customer-group-dashb",
  "roles": [
   {
-   "role": "All"
+   "role": "Sales Invoice Cancellation Override"
   }
  ],
  "script": null,
