@@ -60,7 +60,7 @@
 //     let selected_quarter = current.quarter;
 //     let selected_fy_start_year = current.fy_start_year;
 //     let selected_month = null;
-//     let selected_customer_group = "Debtors Distributors";   // default tab
+//     let selected_customer_group = "All Customer Groups";   // default tab
 
 //     let dates = get_fy_quarter_dates(selected_quarter, selected_fy_start_year);
 //     let from_date = dates.from_date;
@@ -140,26 +140,26 @@
 //             .month-btn:hover { background: #e6f4f1; }
 //             .month-btn.active { background: #0f766e; color: white; }
 
-//             .mis-section-title { font-size: 16px; font-weight: 800; color: #0b3d5c; margin: 18px 0 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-//             .mis-actions { margin-left: auto; display: flex; gap: 8px; }
-//             .mis-action-btn {
-//                 padding: 6px 14px; border-radius: 8px; border: 1px solid #0b3d5c;
-//                 background: white; color: #0b3d5c; font-weight: 700; font-size: 12px; cursor: pointer;
-//             }
-//             .mis-action-btn:hover { background: #0b3d5c; color: white; }
+//             .mis-section-title { font-size: 16px; font-weight: 800; color: #0b3d5c; margin: 18px 0 10px; }
 
-//             /* ---------- Customer Group tabs ---------- */
-//             .cg-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+//             /* ---------- Customer Group tabs (green, 6 per row) ---------- */
+//             .cg-tabs {
+//                 display: grid;
+//                 grid-template-columns: repeat(6, 1fr);
+//                 gap: 10px; margin-bottom: 18px;
+//             }
 //             .cg-tab {
-//                 padding: 12px 18px; border-radius: 12px; color: white; font-weight: 800;
+//                 padding: 10px 12px; border-radius: 10px; color: white; font-weight: 800;
 //                 font-size: 13px; cursor: pointer; text-align: center;
+//                 min-height: 42px; display: flex; align-items: center; justify-content: center;
 //                 background: linear-gradient(135deg, #047857, #10b981);
-//                 box-shadow: 0 6px 15px rgba(0,0,0,.15); transition: all .2s ease;
+//                 box-shadow: 0 4px 10px rgba(0,0,0,.15); transition: all .2s ease;
 //                 opacity: .75;
 //             }
-//             .cg-tab:hover { transform: translateY(-3px); opacity: 1; }
-//             .cg-tab.active { opacity: 1; outline: 3px solid #0b3d5c; box-shadow: 0 10px 25px rgba(0,0,0,.25); }
-//             .cg-tab.cg-parent { background: linear-gradient(135deg, #1d4ed8, #2563eb); }
+//             .cg-tab:hover { transform: translateY(-2px); opacity: 1; }
+//             .cg-tab.active { opacity: 1; outline: 3px solid #0b3d5c; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+//             /* parent groups (include their child groups) = same dark green as the header */
+//             .cg-tab.cg-parent { background: linear-gradient(135deg, #064e3b, #0f766e); }
 
 //             .mis-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 18px; }
 //             .kpi-card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 4px 14px rgba(0,0,0,.08); border-left: 6px solid #0f766e; }
@@ -182,6 +182,9 @@
 //             .region-cat-filter select { padding: 5px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; font-weight: 600; color: #1e293b; }
 //             .region-cat-filter label { font-size: 12px; font-weight: 700; color: #0b3d5c; }
 
+//             @media (max-width: 1100px) {
+//                 .cg-tabs { grid-template-columns: repeat(3, 1fr); }
+//             }
 //             @media (max-width: 900px) {
 //                 .mis-grid { grid-template-columns: 1fr; }
 //                 .quarter-range-label { margin-left: 0; }
@@ -227,13 +230,7 @@
 //                 </div>
 //             </div>
 
-//             <div class="mis-section-title">
-//                 Customer Groups
-//                 <div class="mis-actions">
-//                     <button class="mis-action-btn" id="open-report-btn">Open Full Report</button>
-//                     <button class="mis-action-btn" id="download-excel-btn">Download MIS Excel</button>
-//                 </div>
-//             </div>
+//             <div class="mis-section-title">Customer Groups</div>
 //             <div class="cg-tabs" id="cg-tabs"></div>
 
 //             <div class="mis-kpis">
@@ -288,30 +285,16 @@
 //     function pct(v) { return (v || 0).toFixed(1) + "%"; }
 
 //     // ------------------------------------------------------------------
-//     // Top buttons (open report / excel) — both use the selected group
+//     // Open the TEST REPORT for a customer group (same as Sales MIS buttons)
 //     // ------------------------------------------------------------------
-//     $(page.body).find("#open-report-btn").on("click", function () {
+//     function open_report(customer_group) {
 //         frappe.set_route("query-report", "TEST REPORT", {
 //             from_date: from_date,
 //             to_date: to_date,
-//             customer_group: selected_customer_group,
+//             customer_group: customer_group,
 //             view_type: "TSO Summary"
 //         });
-//     });
-
-//     $(page.body).find("#download-excel-btn").on("click", function () {
-//         let filters = {
-//             from_date: from_date,
-//             to_date: to_date,
-//             customer_group: selected_customer_group,
-//             view_type: "TSO Summary",
-//             party_wise_total: 1
-//         };
-//         window.open(
-//             "/api/method/" + REPORT_METHOD + ".download_mis_excel?" +
-//             new URLSearchParams(filters).toString()
-//         );
-//     });
+//     }
 
 //     // ------------------------------------------------------------------
 //     // Customer Group tabs
@@ -321,15 +304,20 @@
 
 //         rows.forEach(function (row) {
 //             let $t = $('<div class="cg-tab"></div>').text(row.name);
-//             if (row.is_group) $t.addClass("cg-parent");   // blue = parent group (includes its children)
+//             if (row.is_group) $t.addClass("cg-parent");   // darker blue = parent group (includes its children)
 //             if (row.name === selected_customer_group) $t.addClass("active");
 
 //             $t.on("click", function () {
 //                 selected_customer_group = row.name;
 //                 $wrap.find(".cg-tab").removeClass("active");
 //                 $t.addClass("active");
-//                 $("#header-cg-label").text(selected_customer_group);
-//                 load_dashboard_data();
+//                 $(page.body).find("#header-cg-label").text(selected_customer_group);
+
+//                 // refresh dashboard figures in the background (no freeze screen)
+//                 load_dashboard_data(true);
+
+//                 // and go straight to the report page
+//                 open_report(row.name);
 //             });
 //             $wrap.append($t);
 //         });
@@ -344,7 +332,7 @@
 //             if (!rows.length) return;
 //             let names = rows.map(r => r.name);
 //             if (!names.includes(selected_customer_group)) selected_customer_group = names[0];
-//             $("#header-cg-label").text(selected_customer_group);
+//             $(page.body).find("#header-cg-label").text(selected_customer_group);
 //             render_cg_tabs(rows);
 //         });
 //     }
@@ -376,8 +364,8 @@
 //             label = quarter_label(selected_quarter, selected_fy_start_year);
 //         }
 
-//         $("#header-quarter-label").text(label);
-//         $("#quarter-range-label").text(
+//         $(page.body).find("#header-quarter-label").text(label);
+//         $(page.body).find("#quarter-range-label").text(
 //             frappe.datetime.str_to_user(from_date) + "  to  " + frappe.datetime.str_to_user(to_date)
 //         );
 //         $(page.body).find("#custom-range-active-label").hide();
@@ -438,8 +426,8 @@
 //         selected_month = null;
 //         from_date = f;
 //         to_date = t;
-//         $("#header-quarter-label").text("Custom Range");
-//         $("#quarter-range-label").text(
+//         $(page.body).find("#header-quarter-label").text("Custom Range");
+//         $(page.body).find("#quarter-range-label").text(
 //             frappe.datetime.str_to_user(from_date) + "  to  " + frappe.datetime.str_to_user(to_date)
 //         );
 //         $(page.body).find("#custom-range-active-label").show();
@@ -452,8 +440,9 @@
 
 //     // ------------------------------------------------------------------
 //     // Data loading
+//     // silent = true  -> no "loading" freeze screen (used when a tab opens the report)
 //     // ------------------------------------------------------------------
-//     function load_dashboard_data() {
+//     function load_dashboard_data(silent) {
 //         frappe.call({
 //             method: REPORT_METHOD + ".get_mis_dashboard_data",
 //             args: {
@@ -461,16 +450,16 @@
 //                 to_date: to_date,
 //                 customer_group: selected_customer_group
 //             },
-//             freeze: true,
+//             freeze: !silent,
 //             freeze_message: __("Loading {0} ...", [selected_customer_group]),
 //             callback: function (r) {
 //                 let d = r.message || {};
 //                 let kpi = d.kpi || {};
 
-//                 $("#total-target").text(money(kpi.target));
-//                 $("#total-achieved").text(money(kpi.achieved));
-//                 $("#total-gap").text(money(kpi.gap));
-//                 $("#total-achievement").text(pct(kpi.achievement));
+//                 $(page.body).find("#total-target").text(money(kpi.target));
+//                 $(page.body).find("#total-achieved").text(money(kpi.achieved));
+//                 $(page.body).find("#total-gap").text(money(kpi.gap));
+//                 $(page.body).find("#total-achievement").text(pct(kpi.achievement));
 
 //                 _last_category_data = d.category_summary || [];
 //                 _last_area_data = d.area_summary || [];
@@ -514,20 +503,20 @@
 //     }
 
 //     function render_category_table(rows) {
-//         $("#category-table").html(table_html("Category", by_achievement(rows), "category"));
+//         $(page.body).find("#category-table").html(table_html("Category", by_achievement(rows), "category"));
 //     }
 
 //     function render_gap_table(rows) {
-//         $("#gap-table").html(table_html("Area", by_achievement(rows), "area"));
+//         $(page.body).find("#gap-table").html(table_html("Area", by_achievement(rows), "area"));
 //     }
 
 //     function render_charts(category_rows, area_rows) {
-//         $("#category-chart").empty();
-//         $("#area-chart").empty();
+//         $(page.body).find("#category-chart").empty();
+//         $(page.body).find("#area-chart").empty();
 
 //         let sorted_cat = by_achievement(category_rows);
 //         if (sorted_cat.length) {
-//             new frappe.Chart("#category-chart", {
+//             new frappe.Chart($(page.body).find("#category-chart")[0], {
 //                 title: "Category — Achieved vs Gap",
 //                 data: {
 //                     labels: sorted_cat.map(r => r.category),
@@ -544,7 +533,7 @@
 
 //         let sorted_area = by_achievement(area_rows);
 //         if (sorted_area.length) {
-//             new frappe.Chart("#area-chart", {
+//             new frappe.Chart($(page.body).find("#area-chart")[0], {
 //                 title: "Area — Achieved vs Gap",
 //                 data: {
 //                     labels: sorted_area.map(r => r.area),
@@ -569,9 +558,9 @@
 //         }
 //         let sorted = by_achievement(rows);
 
-//         $("#region-cat-chart").empty();
+//         $(page.body).find("#region-cat-chart").empty();
 //         if (sorted.length) {
-//             new frappe.Chart("#region-cat-chart", {
+//             new frappe.Chart($(page.body).find("#region-cat-chart")[0], {
 //                 title: selected_region
 //                     ? `${selected_region} — Category Target vs Achieved`
 //                     : "All Regions — Category Target vs Achieved",
@@ -605,7 +594,7 @@
 //                     <td class="percent">${pct(p)}</td>
 //                 </tr>`;
 //         });
-//         $("#region-cat-table").html(html);
+//         $(page.body).find("#region-cat-table").html(html);
 //     }
 
 //     // ------------------------------------------------------------------
@@ -615,6 +604,7 @@
 //     load_customer_group_tabs();
 //     load_dashboard_data();
 // };
+
 
 
 frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
@@ -849,7 +839,12 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
                 </div>
             </div>
 
-            <div class="mis-section-title">Customer Groups</div>
+            <div class="mis-section-title">
+                Customer Groups
+                <span style="font-size:11px;font-weight:600;color:#64748b;margin-left:8px;">
+                    Click once to view figures · click the selected group again to open the report
+                </span>
+            </div>
             <div class="cg-tabs" id="cg-tabs"></div>
 
             <div class="mis-kpis">
@@ -923,20 +918,22 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
 
         rows.forEach(function (row) {
             let $t = $('<div class="cg-tab"></div>').text(row.name);
-            if (row.is_group) $t.addClass("cg-parent");   // darker blue = parent group (includes its children)
+            if (row.is_group) $t.addClass("cg-parent");   // darker green = parent group (includes its children)
             if (row.name === selected_customer_group) $t.addClass("active");
 
             $t.on("click", function () {
+                // 2nd click: this group is already selected -> open the report
+                if (row.name === selected_customer_group) {
+                    open_report(row.name);
+                    return;
+                }
+
+                // 1st click: only change the dashboard figures to this group
                 selected_customer_group = row.name;
                 $wrap.find(".cg-tab").removeClass("active");
                 $t.addClass("active");
                 $(page.body).find("#header-cg-label").text(selected_customer_group);
-
-                // refresh dashboard figures in the background (no freeze screen)
-                load_dashboard_data(true);
-
-                // and go straight to the report page
-                open_report(row.name);
+                load_dashboard_data();
             });
             $wrap.append($t);
         });
@@ -1059,7 +1056,7 @@ frappe.pages["customer-group-mis"].on_page_load = function (wrapper) {
 
     // ------------------------------------------------------------------
     // Data loading
-    // silent = true  -> no "loading" freeze screen (used when a tab opens the report)
+    // silent = true  -> no "loading" freeze screen
     // ------------------------------------------------------------------
     function load_dashboard_data(silent) {
         frappe.call({

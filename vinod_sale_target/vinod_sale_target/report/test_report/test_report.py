@@ -2156,107 +2156,240 @@ def download_mis_excel(**filters):
     frappe.local.response.type        = "download"
 
 
-# def make_tso_summary_sheet(ws, data, categories,
-#                             sheet_label="TSO Target vs Achievement",
-#                             period_label=None):
-#     dark_green  = "0B6A57"
-#     yellow      = "FFF2CC"
-#     blue        = "DDEBF7"
-#     total_fill  = "D9EAD3"
-#     period_fill = "E8F5F1"
+def make_customer_summary_sheet(ws, data, categories,
+                                sheet_label="Distributor Target vs Achievement",
+                                period_label=None):
+    """Same look as make_tso_summary_sheet, but totals are per DISTRIBUTOR
+    (customer) instead of per TSO. Month-wise rows of a distributor are
+    followed by one 'TOTAL — <distributor>' row."""
+    dark_green  = "0B6A57"
+    yellow      = "FFF2CC"
+    blue        = "DDEBF7"
+    total_fill  = "D9EAD3"
+    period_fill = "E8F5F1"
 
-#     thin   = Side(style="thin", color="999999")
-#     border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    thin   = Side(style="thin", color="999999")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-#     headers = ["Region", "TSO", "Distributor"]
-#     for cat in categories:
-#         headers.append(f"{cat} Target")
-#         headers.append(f"{cat} Achieved")
-#     headers += ["Total Target", "Total Achieved", "Achievement %"]
+    FIXED     = 5            # Region, TSO, Distributor, Customer Group, Month
+    first_num = FIXED + 1    # first numeric column (F)
 
-#     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
-#     title = ws.cell(1, 1)
-#     title.value     = f"Vinod Cookware — {sheet_label}"
-#     title.font      = Font(bold=True, color="FFFFFF", size=12)
-#     title.fill      = PatternFill("solid", fgColor=dark_green)
-#     title.alignment = Alignment(horizontal="center")
+    headers = ["Region", "TSO", "Distributor", "Customer Group", "Month"]
+    for cat in categories:
+        headers.append(f"{cat} Target")
+        headers.append(f"{cat} Achieved")
+    headers += ["Total Target", "Total Achieved", "Achievement %"]
+    ncols = len(headers)
 
-#     ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=len(headers))
-#     period_cell       = ws.cell(2, 1)
-#     period_cell.value = f"Period: {period_label}" if period_label else "Period: All Data"
-#     period_cell.font  = Font(bold=True, color="0B3D5C", size=10)
-#     period_cell.fill  = PatternFill("solid", fgColor=period_fill)
-#     period_cell.alignment = Alignment(horizontal="center")
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ncols)
+    title = ws.cell(1, 1)
+    title.value     = f"Vinod Cookware — {sheet_label}"
+    title.font      = Font(bold=True, color="FFFFFF", size=12)
+    title.fill      = PatternFill("solid", fgColor=dark_green)
+    title.alignment = Alignment(horizontal="center")
 
-#     header_row = 3
-#     for col, h in enumerate(headers, 1):
-#         cell           = ws.cell(header_row, col)
-#         cell.value     = h
-#         cell.font      = Font(bold=True, color="FFFFFF")
-#         cell.fill      = PatternFill("solid", fgColor=dark_green)
-#         cell.border    = border
-#         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=ncols)
+    period_cell       = ws.cell(2, 1)
+    period_cell.value = f"Period: {period_label}" if period_label else "Period: All Data"
+    period_cell.font  = Font(bold=True, color="0B3D5C", size=10)
+    period_cell.fill  = PatternFill("solid", fgColor=period_fill)
+    period_cell.alignment = Alignment(horizontal="center")
 
-#     row_no = header_row + 1
-#     for row in data:
-#         values = [row.get("custom_region"), row.get("tso_name"), row.get("customer_name")]
-#         for cat in categories:
-#             safe = safe_field(cat)
-#             values.append(flt(row.get(f"{safe}_target")))
-#             values.append(flt(row.get(f"{safe}_achieved")))
+    header_row = 3
+    for col, h in enumerate(headers, 1):
+        cell           = ws.cell(header_row, col)
+        cell.value     = h
+        cell.font      = Font(bold=True, color="FFFFFF")
+        cell.fill      = PatternFill("solid", fgColor=dark_green)
+        cell.border    = border
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
-#         total_target   = flt(row.get("total_target"))
-#         total_achieved = flt(row.get("total_achieved"))
-#         ach_percent    = total_achieved / total_target if total_target else 0
-#         values        += [total_target, total_achieved, ach_percent]
+    # each distributor's month rows sit together
+    data = sorted(data, key=lambda r: (
+        (r.get("custom_region") or ""),
+        (r.get("tso_name") or ""),
+        (r.get("customer_name") or ""),
+        (r.get("customer") or ""),
+        int(r.get("year") or 0),
+        int(r.get("month_num") or 0)
+    ))
 
-#         for col, value in enumerate(values, 1):
-#             cell           = ws.cell(row_no, col)
-#             cell.value     = value
-#             cell.border    = border
-#             cell.alignment = Alignment(vertical="center", wrap_text=True)
-#             if col > 3:
-#                 cell.number_format = '#,##0.00'
-#             if 4 <= col <= len(headers) - 3:
-#                 if (col - 4) % 2 == 0:
-#                     cell.fill = PatternFill("solid", fgColor=yellow)
-#                 else:
-#                     cell.fill = PatternFill("solid", fgColor=blue)
-#             if col == len(headers):
-#                 cell.number_format = "0.00%"
+    tt_col = get_column_letter(ncols - 2)   # Total Target column letter
+    ta_col = get_column_letter(ncols - 1)   # Total Achieved column letter
 
-#         row_no += 1
+    def write_customer_total(r, row_info, start, end):
+        ws.cell(r, 1).value = row_info.get("custom_region")
+        ws.cell(r, 2).value = row_info.get("tso_name")
+        ws.cell(r, 3).value = f"TOTAL — {row_info.get('customer_name')}"
+        ws.cell(r, 4).value = row_info.get("customer_group")
+        ws.cell(r, 5).value = "All"
+        for col in range(first_num, ncols):
+            L = get_column_letter(col)
+            ws.cell(r, col).value = f"=SUM({L}{start}:{L}{end})"
+        ws.cell(r, ncols).value = f"=IF({tt_col}{r}=0,0,{ta_col}{r}/{tt_col}{r})"
+        for col in range(1, ncols + 1):
+            c = ws.cell(r, col)
+            c.font   = Font(bold=True)
+            c.fill   = PatternFill("solid", fgColor=total_fill)
+            c.border = border
+            if col > FIXED:
+                c.number_format = "0.00%" if col == ncols else '#,##0.00'
 
-#     total_row = row_no
-#     ws.cell(total_row, 1).value = "Grand Total"
-#     ws.cell(total_row, 1).font  = Font(bold=True)
+    row_no       = header_row + 1
+    block_start  = row_no
+    current_key  = None
+    current_info = None
 
-#     for col in range(4, len(headers)):
-#         letter      = get_column_letter(col)
-#         cell        = ws.cell(total_row, col)
-#         cell.value  = f"=SUM({letter}{header_row+1}:{letter}{total_row-1})"
-#         cell.font   = Font(bold=True)
-#         cell.fill   = PatternFill("solid", fgColor=total_fill)
-#         cell.border = border
-#         cell.number_format = '#,##0.00'
+    for row in data:
+        key = (row.get("customer"), row.get("tso_name"))
 
-#     ach_cell          = ws.cell(total_row, len(headers))
-#     total_target_col  = get_column_letter(len(headers) - 2)
-#     total_ach_col     = get_column_letter(len(headers) - 1)
-#     ach_cell.value    = f"={total_ach_col}{total_row}/{total_target_col}{total_row}"
-#     ach_cell.font     = Font(bold=True)
-#     ach_cell.fill     = PatternFill("solid", fgColor=total_fill)
-#     ach_cell.border   = border
-#     ach_cell.number_format = "0.00%"
+        # distributor changed -> close the previous distributor with a total row
+        if current_key is not None and key != current_key:
+            write_customer_total(row_no, current_info, block_start, row_no - 1)
+            row_no += 1
+            block_start = row_no
 
-#     ws.freeze_panes = f"D{header_row+1}"
-#     ws.auto_filter.ref = ws.dimensions
-#     ws.column_dimensions["A"].width = 14
-#     ws.column_dimensions["B"].width = 24
-#     ws.column_dimensions["C"].width = 35
-#     for col in range(4, len(headers) + 1):
-#         ws.column_dimensions[get_column_letter(col)].width = 14
+        current_key  = key
+        current_info = row
 
+        values = [
+            row.get("custom_region"),
+            row.get("tso_name"),
+            row.get("customer_name"),
+            row.get("customer_group"),
+            row.get("month")
+        ]
+        for cat in categories:
+            safe = safe_field(cat)
+            values.append(flt(row.get(f"{safe}_target")))
+            values.append(flt(row.get(f"{safe}_achieved")))
+
+        total_target   = flt(row.get("total_target"))
+        total_achieved = flt(row.get("total_achieved"))
+        ach_percent    = total_achieved / total_target if total_target else 0
+        values        += [total_target, total_achieved, ach_percent]
+
+        for col, value in enumerate(values, 1):
+            cell           = ws.cell(row_no, col)
+            cell.value     = value
+            cell.border    = border
+            cell.alignment = Alignment(vertical="center", wrap_text=True)
+            if col > FIXED:
+                cell.number_format = '#,##0.00'
+            if first_num <= col <= ncols - 3:
+                cell.fill = PatternFill(
+                    "solid",
+                    fgColor=yellow if (col - first_num) % 2 == 0 else blue
+                )
+            if col == ncols:
+                cell.number_format = "0.00%"
+
+        row_no += 1
+
+    # close the last distributor
+    if current_key is not None:
+        write_customer_total(row_no, current_info, block_start, row_no - 1)
+        row_no += 1
+
+    # Grand Total adds only the distributor TOTAL rows (no double counting)
+    total_row = row_no
+    last_data = total_row - 1
+    ws.cell(total_row, 1).value = "Grand Total"
+    for col in range(first_num, ncols):
+        L = get_column_letter(col)
+        ws.cell(total_row, col).value = (
+            f'=SUMIF($C${header_row+1}:$C${last_data},"TOTAL*",{L}{header_row+1}:{L}{last_data})'
+        )
+    ws.cell(total_row, ncols).value = f"=IF({tt_col}{total_row}=0,0,{ta_col}{total_row}/{tt_col}{total_row})"
+    for col in range(1, ncols + 1):
+        c = ws.cell(total_row, col)
+        c.font   = Font(bold=True)
+        c.fill   = PatternFill("solid", fgColor="B6D7A8")
+        c.border = border
+        if col > FIXED:
+            c.number_format = "0.00%" if col == ncols else '#,##0.00'
+
+    ws.freeze_panes = f"{get_column_letter(first_num)}{header_row+1}"
+    ws.auto_filter.ref = f"A{header_row}:{get_column_letter(ncols)}{total_row-1}"
+    ws.column_dimensions["A"].width = 14
+    ws.column_dimensions["B"].width = 24
+    ws.column_dimensions["C"].width = 35
+    ws.column_dimensions["D"].width = 22
+    ws.column_dimensions["E"].width = 12
+    for col in range(first_num, ncols + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 14
+
+
+@frappe.whitelist()
+def download_mis_excel_customer_wise(**filters):
+    """Same as download_mis_excel, but totals are Distributor (Customer) wise
+    instead of TSO wise."""
+    filters      = frappe._dict(filters or {})
+    categories   = get_categories(filters)
+    data         = get_data(filters, categories)
+    view_type    = filters.get("view_type") or "TSO Summary"
+    period_label = get_period_label(filters)
+
+    wb = Workbook()
+
+    if view_type == "Region Summary":
+        ws = wb.active
+        ws.title = "Region Summary"
+        make_region_summary_sheet(ws, data, sheet_label="Region Summary", period_label=period_label)
+        add_region_chart(ws, header_row=3)
+        filename_part = "Region_Summary"
+
+    elif view_type in SECTION_VIEW_MAP:
+        fieldnames, selected_values = SECTION_VIEW_MAP[view_type]
+        section_rows     = filter_section_rows(data, fieldnames, selected_values)
+        clean_sheet_name = view_type.replace(" Detail", "")[:31]
+        ws = wb.active
+        ws.title = clean_sheet_name
+        make_customer_summary_sheet(
+            ws, section_rows, categories,
+            sheet_label=f"{clean_sheet_name} — Distributor wise Target vs Achievement",
+            period_label=period_label
+        )
+        filename_part = clean_sheet_name.replace(" ", "_") + "_Customer_Wise"
+
+    else:
+        ws = wb.active
+        ws.title = "Distributor Summary"
+        make_customer_summary_sheet(
+            ws, data, categories,
+            sheet_label="Distributor Summary — Target vs Achievement",
+            period_label=period_label
+        )
+
+        ws_region = wb.create_sheet("Region Summary")
+        make_region_summary_sheet(ws_region, data,
+                                  sheet_label="Region Summary", period_label=period_label)
+
+        ws_chart = wb.create_sheet("Charts")
+        make_region_summary_sheet(ws_chart, data,
+                                  sheet_label="Region Summary (Chart)", period_label=period_label)
+        add_region_chart(ws_chart, header_row=3)
+
+        for sheet_name, (fieldnames, selected_values) in SECTION_VIEW_MAP.items():
+            clean_sheet_name = sheet_name.replace(" Detail", "")[:31]
+            section_rows     = filter_section_rows(data, fieldnames, selected_values)
+            if section_rows:
+                ws_sec = wb.create_sheet(clean_sheet_name)
+                make_customer_summary_sheet(
+                    ws_sec, section_rows, categories,
+                    sheet_label=f"{clean_sheet_name} — Distributor wise Target vs Achievement",
+                    period_label=period_label
+                )
+
+        filename_part = "Full_MIS_Customer_Wise"
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    frappe.local.response.filename    = f"Vinod_Cookware_{filename_part}.xlsx"
+    frappe.local.response.filecontent = output.read()
+    frappe.local.response.type        = "download"
 
 
 def make_tso_summary_sheet(ws, data, categories,

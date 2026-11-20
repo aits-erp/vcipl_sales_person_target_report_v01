@@ -182,6 +182,16 @@ frappe.query_reports["TEST REPORT"] = {
                 + query
             );
         });
+
+            report.page.add_inner_button("Download MIS Excel (Customer Group)", function() {
+                let filters = report.get_values();
+                let query = new URLSearchParams(filters).toString();
+
+                window.open(
+                    "/api/method/vinod_sale_target.vinod_sale_target.report.test_report.test_report.download_mis_excel_customer_wise?"
+                    + query
+                );
+            });
     }
 };
 console.log("TEST REPORT JS LOADED");
