@@ -4,7 +4,7 @@
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2026-11-20 10:37:46.515021",
+ "modified": "2026-11-21 10:10:08.837955",
  "modified_by": "Administrator",
  "module": "vinod_sale_target",
  "name": "customer-group-mis",
@@ -12,7 +12,10 @@
  "page_name": "customer-group-mis",
  "roles": [
   {
-   "role": "All"
+   "role": "CD"
+  },
+  {
+   "role": "Sales Invoice Cancellation Override"
   }
  ],
  "script": null,
